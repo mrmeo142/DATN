@@ -51,7 +51,7 @@ public class LogServices {
             chg.setChargerId(chargerId);
             chg.setBillId(billId);
             chg.setCurrent(current);
-            chg.setTemperature(temperature);;
+            chg.setTemperature(temperature);
             chg.setTimestamp(now);
             chg.setVoltage(voltage);
             logRepositories.save(chg);
@@ -65,7 +65,7 @@ public class LogServices {
             chg.setChargerId(chargerId);
             chg.setBillId(billId);
             chg.setCurrent(current);
-            chg.setTemperature(temperature);;
+            chg.setTemperature(temperature);
             chg.setTimestamp(now);
             chg.setVoltage(voltage);
             logRepositories.save(chg);

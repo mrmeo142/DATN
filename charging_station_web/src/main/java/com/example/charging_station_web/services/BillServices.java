@@ -50,7 +50,8 @@ public class BillServices {
     // deposit bill
     public Bills createDepositBill(String userId, String bankAccountId, Double amount) {
         Bills bill = new Bills();
-        BankAccount bankAccount = accountRepositories.findById(bankAccountId);
+        BankAccount bankAccount = accountRepositories.findById(bankAccountId)
+                    .orElseThrow(() -> new RuntimeException("Account not found"));
         Double balance = bankAccount.getBalance();
         bankAccount.setBalance(balance - amount);
         accountRepositories.save(bankAccount);
@@ -70,7 +71,8 @@ public class BillServices {
     // withdraw bill
     public Bills createWithdrawBill(String userId, String bankAccountId, Double amount) {
         Bills bill = new Bills();
-        BankAccount bankAccount = accountRepositories.findById(bankAccountId);
+        BankAccount bankAccount = accountRepositories.findById(bankAccountId)
+                    .orElseThrow(() -> new RuntimeException("Account not found"));
         Double balance = bankAccount.getBalance();
         bankAccount.setBalance(amount + balance); 
         accountRepositories.save(bankAccount);
@@ -90,7 +92,8 @@ public class BillServices {
     
     // find bill by id
     public Bills findBillById(String id) {
-        return billsReponsitories.findById(id);
+        return billsReponsitories.findById(id)
+                .orElseThrow(() -> new RuntimeException("Bill not found"));
     }
 
     // get all bills
@@ -113,10 +116,12 @@ public class BillServices {
     // ceate electricity bill
     public Bills createElecBill(String userId, String chargerId, String vehicleId, String submit) {
         Bills bill = new Bills();
-        Chargers charger = chargerRepositories.findById(chargerId);
+        Chargers charger = chargerRepositories.findById(chargerId)
+            .orElseThrow(() -> new RuntimeException("Charger not found"));
         charger.setStatus("ACTIVE");
         chargerRepositories.save(charger);
-        Users user = userRepositories.findById(userId);
+        Users user = userRepositories.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
         bill.setAmount(0.0);
         bill.setUserId(userId);
         bill.setManagerId(charger.getMngId());
@@ -125,11 +130,11 @@ public class BillServices {
         bill.setDescription("Electricity Bill");
         bill.setPaid(false);
         bill.setBillType(BillType.ElECTRIC);
-        bill.setUserName(user.getUsername());
+        bill.setUserName(user.getFullname());
         bill.setSubmitType(submit);
         bill.setVehicleId(vehicleId);
         Bills b = billsReponsitories.save(bill);
-        String billid = b.getId().toHexString();
+        String billid = b.getId();
         mqttService.publishToDevice( chargerId, billid, submit );
         return b;
     }
@@ -138,7 +143,8 @@ public class BillServices {
     public Bills pauseElecBill(String billId, String chargerId, String submit) {
         mqttService.publishToDevice(chargerId, billId, submit);
         Double price = priceServices.getPrice().getPrice();
-        Bills bill = billsReponsitories.findById(billId);
+        Bills bill = billsReponsitories.findById(billId)
+                        .orElseThrow(() -> new RuntimeException("Bill not found"));;
         LocalDateTime pause = LocalDateTime.now();
         List<ChargingLog> logs =  logRepositories.findByBillId(billId);
         Double v = 0.0, i = 0.0;
@@ -162,7 +168,8 @@ public class BillServices {
     // continue electicity bill
     public Bills continueElecBill(String billId, String chargerId, String submit) {
         mqttService.publishToDevice(chargerId, billId, submit);
-        Bills bill = billsReponsitories.findById(billId);
+        Bills bill = billsReponsitories.findById(billId)
+                        .orElseThrow(() -> new RuntimeException("Bill not found"));
         bill.setCreatedAt(LocalDateTime.now());
         bill.setSubmitType(submit);
         return billsReponsitories.save(bill);
@@ -170,11 +177,15 @@ public class BillServices {
 
     // paid electricity bill
     public Bills paidElecBill(String billId){
-        Bills bill = billsReponsitories.findById(billId);
+        Bills bill = billsReponsitories.findById(billId)
+                        .orElseThrow(() -> new RuntimeException("Bill not found"));
         bill.setPaidAt(LocalDateTime.now());
-        Users user = userRepositories.findById(bill.getUserId());
-        Users manager = userRepositories.findById(bill.getManagerId());
-        Chargers charger = chargerRepositories.findById(bill.getChargerId());
+        Users user = userRepositories.findById(bill.getUserId())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+        Users manager = userRepositories.findById(bill.getManagerId())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+        Chargers charger = chargerRepositories.findById(bill.getChargerId())
+                        .orElseThrow(() -> new RuntimeException("Charger not found"));
         System.out.println(bill.getManagerId());
         Double mng = manager.getBalance();
         Double balance = user.getBalance();

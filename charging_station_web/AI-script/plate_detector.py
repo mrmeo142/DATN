@@ -1,81 +1,108 @@
-import cv2
-from ultralytics import YOLO
-import easyocr
-import requests
+import os
 import time
+from flask import Flask, request, jsonify
+import cv2
+import numpy as np
+from ultralytics import YOLO
+from vietocr.tool.predictor import Predictor
+from vietocr.tool.config import Cfg
+from PIL import Image
 
-ESP32_URL = "http://192.168.0.103:81/stream"
-BACKEND_URL = "http://localhost:8080/api/plate/check-list"
-CONFIDENCE_THRESHOLD = 0.5
-SEND_INTERVAL = 5  # gửi mỗi 5 giây
+app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+YOLO_MODEL_PATH = os.path.join(BASE_DIR, "best.pt")
+DEBUG_FOLDER = 'debug_images'
+os.makedirs(DEBUG_FOLDER, exist_ok=True)
 
-model = YOLO("yolov8n.pt")
-ocr_reader = easyocr.Reader(['en'])
+model = YOLO(YOLO_MODEL_PATH)
+config = Cfg.load_config_from_name('vgg_transformer')
+config['device'] = 'cpu'
+vietocr_model = Predictor(config)
 
-cap = cv2.VideoCapture(ESP32_URL)
-if not cap.isOpened():
-    print("[ERROR] Không kết nối được ESP32-CAM.")
-    exit()
+# ------------------- HÀM NHẬN DIỆN BIỂN SỐ -------------------
+def detect_plate(image_bgr, conf_thresh=0.48):
+    image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+    results = model(image_rgb)
+    plates = []
+    debug_image = image_bgr.copy()
 
-detected_plates = set()  # dùng set để loại trùng
-last_send_time = 0
+    for result in results:
+        for box in result.boxes:
+            conf = float(box.conf[0])
+            if conf < conf_thresh:
+                continue
 
-print("[INFO] Bắt đầu nhận diện nhiều biển số...")
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            license_plate = image_rgb[y1:y2, x1:x2]
+            timestamp = int(time.time() * 1000)
+            debug_path = os.path.join(DEBUG_FOLDER, f"debug_{timestamp}.jpg")
+            cv2.imwrite(debug_path, license_plate)
+            
+            h = y2 - y1
+            mid = h // 2
+            line1 = license_plate[:mid, :]
+            line2 = license_plate[mid:, :]
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        print("[WARN] Mất khung hình...")
-        time.sleep(1)
-        continue
+            line1_pil = Image.fromarray(line1)
+            line2_pil = Image.fromarray(line2)
+            text_line1 = vietocr_model.predict(line1_pil).strip().upper()
+            text_line1 = text_line1.replace('-', '')
+            serial_char = text_line1[2]
+            if serial_char.isdigit():
+                if serial_char == '0':
+                        serial_char = 'U'
+                elif serial_char == '8':
+                        serial_char = 'B'
+                elif serial_char == '5':
+                    serial_char = 'S'
+                elif serial_char == '1':
+                    serial_char = 'I'
+                elif serial_char == '7':
+                    serial_char = 'T'
+                elif serial_char == '6':
+                    serial_char = 'G'
+            char_at_3 = text_line1[3:4]
+            if char_at_3 and char_at_3.isalpha():
+                if char_at_3 == 'O':
+                    char_at_3 = '0'
+                elif char_at_3 == 'B':
+                    char_at_3 = '8'
+                elif char_at_3 == 'S':
+                    char_at_3 = '5'
+                elif char_at_3 == 'T':
+                    char_at_3 = '1'
+                elif char_at_3 == 'G':
+                    char_at_3 = '6'
+            text_line1 = text_line1[:2] + serial_char + char_at_3
+            text_line2 = vietocr_model.predict(line2_pil).strip()
 
-    results = model(frame, verbose=False)
-    boxes = results[0].boxes.xyxy
-    confs = results[0].boxes.conf
+            full_plate = text_line1 + text_line2
+            full_plate = full_plate.replace('-', '').replace('.', '')
+            plates.append(full_plate)
+    
+    return plates
 
-    for i, box in enumerate(boxes):
-        if confs[i] < CONFIDENCE_THRESHOLD:
-            continue
+# ------------------- API NHẬN ẢNH -------------------
+@app.route("/detect", methods=["POST"])
+def detect_api():
+    threading.Thread(target=detect).start()
 
-        x1, y1, x2, y2 = map(int, box)
-        roi = frame[y1:y2, x1:x2]
+def detect():
+    if 'image' not in request.files:
+        return jsonify({"error": "Không có tệp ảnh"}), 400
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({"error": "Tệp ảnh rỗng"}), 400
+    try:
+        frame = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_COLOR)
+    except Exception as e:
+        return jsonify({"error": f"Không thể giải mã ảnh: {e}"}), 400
+    if frame is None:
+        return jsonify({"error": "Dữ liệu ảnh không hợp lệ"}), 400
 
-        text_results = ocr_reader.readtext(roi)
-        plate_text = ""
-        for (_, text, confidence) in text_results:
-            if confidence > 0.5:
-                plate_text += text + " "
-        plate_text = plate_text.strip().replace(" ", "")
+    plates = detect_plate(frame, conf_thresh=0.48)
 
-        if plate_text:
-            detected_plates.add(plate_text)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, plate_text, (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    return jsonify({"plates": plates if plates else []})
 
-    # Sau mỗi 5 giây gửi tất cả biển số hiện có
-    if time.time() - last_send_time > SEND_INTERVAL and detected_plates:
-        plates_list = list(detected_plates)
-        print(f"[SEND] Gửi {len(plates_list)} biển số: {plates_list}")
-
-        try:
-            response = requests.post(BACKEND_URL, json={"plates": plates_list})
-            if response.status_code == 200:
-                results = response.json()
-                for r in results:
-                    if r["exists"]:
-                        print(f"[MATCH] {r['plate']} có trong DB.")
-                    else:
-                        print(f"[UNKNOWN] {r['plate']} không có trong DB.")
-            else:
-                print(f"[ERROR] API lỗi: {response.status_code}")
-        except Exception as e:
-            print(f"[ERROR] Không gửi được dữ liệu: {e}")
-
-        detected_plates.clear()
-        last_send_time = time.time()
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-cap.release()
-cv2.destroyAllWindows()
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=False)

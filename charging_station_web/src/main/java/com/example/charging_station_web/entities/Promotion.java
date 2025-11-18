@@ -4,9 +4,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
-
-import org.bson.types.ObjectId;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -15,7 +12,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class Promotion {
     @Id
-    private ObjectId id;
+    private String id;
     private String userId;
     private LocalDate startDate;
     private LocalDate approvedDate;

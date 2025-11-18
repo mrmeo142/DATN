@@ -2,20 +2,30 @@ package com.example.charging_station_web.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.charging_station_web.config.JwtUtil;
 import com.example.charging_station_web.entities.Chargers;
+import com.example.charging_station_web.entities.TokenBlackList;
 import com.example.charging_station_web.entities.Users;
 import com.example.charging_station_web.entities.Vehicles;
 import com.example.charging_station_web.repositories.ChargerRepositories;
+import com.example.charging_station_web.repositories.PromRepositories;
+import com.example.charging_station_web.repositories.TokenBlacklist;
 import com.example.charging_station_web.repositories.VehicleRepository;
 import com.example.charging_station_web.services.UserServices;
 
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
 
-import org.bson.types.ObjectId;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -28,154 +38,343 @@ public class UsersControllers {
     private final UserServices userServices;
     private final VehicleRepository vehicleRepository;
     private final ChargerRepositories chargerRepositories;
-    
-    public UsersControllers(UserServices userServices, VehicleRepository vehicleRepository, ChargerRepositories chargerRepositories) {
+    private final PasswordEncoder passwordEncoder;
+    private final PromRepositories promRepositories;
+    private final TokenBlacklist tokenBlacklist;
+    public UsersControllers(UserServices userServices, VehicleRepository vehicleRepository, 
+                            ChargerRepositories chargerRepositories, PasswordEncoder passwordEncoder, 
+                            PromRepositories promRepositories, TokenBlacklist tokenBlacklist) {
         this.userServices = userServices;
         this.vehicleRepository = vehicleRepository;
         this.chargerRepositories = chargerRepositories;
+        this.passwordEncoder = passwordEncoder;
+        this.promRepositories = promRepositories;
+        this.tokenBlacklist = tokenBlacklist;
     }
 
-    // create user
-    @PostMapping("/create")
-    public Users addUsers(@RequestBody Users user) {
-        if(user.getPassword() == null || user.getPassword().length() < 6) {
-            throw new RuntimeException("Password must be at least 6 characters");
+    // lay user qua email tu tocken (done)
+    private Users getUserFromToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
         }
+
+        String token = authHeader.substring(7);
+        String email = JwtUtil.extractEmail(token);
+
+        Users user = userServices.getUsersbyEmail(email);
+        return user;
+    }
+
+
+    // create user (done)
+    @PostMapping("/create")
+    public ResponseEntity<?> addUsers(@RequestBody Users user) {
+        // Kiểm tra mật khẩu
+        if (user.getPassword() == null || user.getPassword().length() < 6) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Password must be at least 6 characters"));
+        }
+
+        // Kiểm tra email hợp lệ
+        if (user.getEmail() == null || !user.getEmail()
+                        .matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Invalid email format"));
+        }
+
+        // Kiểm tra email đã tồn tại
+        if (userServices.getUsersbyEmail(user.getEmail()) != null) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "Email already exists"));
+        }
+
+        // Lưu user mới
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(0);
+        user.setAuthorization(false);
         user.setVehicles(new ArrayList<>());
         user.setBalance(0.0);
-        return userServices.saveUsers(user);
+        Users savedUser = userServices.saveUsers(user);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(savedUser);
     }
-    
-    // get user by id
-    @GetMapping("/{userId}")
-    public Users getUserById(@PathVariable String userId) {
-        return userServices.getUsersbyId(new ObjectId(userId));
+
+    // login user (done)
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody Map<String, String> loginRequest) {
+        String email = loginRequest.get("email");
+        String rawPassword = loginRequest.get("password");
+
+        Users existingUser = userServices.getUsersbyEmail(email);
+        if (existingUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "User not found"));
+        }
+
+        if (!passwordEncoder.matches(rawPassword, existingUser.getPassword())) {
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid password"));
+        }
+
+        String token = JwtUtil.generateToken(existingUser.getEmail());
+        return ResponseEntity.ok(Map.of("token", token));
     }
-    
-    // update user
-    @PutMapping("/{userId}")
-    public Users updateUser(@PathVariable String userId, @RequestBody Users user) {
-        Users update = userServices.getUsersbyId(new ObjectId(userId));
-        if (user.getUsername() != null) {
-            update.setUsername(user.getUsername());
+
+    // get an user (done)
+    @GetMapping("/profile")
+    public ResponseEntity<?> getUserById(HttpServletRequest request) {
+        try {
+            Users user = getUserFromToken(request);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
         }
-        if (user.getFullname() != null) {
-            update.setFullname(user.getFullname());
-        }
-        if (user.getEmail() != null) {
-            update.setEmail(user.getEmail());
-        }
-        if (user.getIdentification() != null) {
-            update.setIdentification(user.getIdentification());
-        }
-        if (user.getPhone() != null) {
-            update.setPhone(user.getPhone());
-        }
-        if (user.getBirthday() != null) {
-            update.setBirthday(user.getBirthday());
-        }
-        if (user.getPassword() != null && user.getPassword().length() >= 6) {
-            update.setPassword(user.getPassword());
-        }
-        return userServices.saveUsers(update);
     }
-    // get all users (non authourized)
+
+    // update user (done)
+    @PutMapping("/update")
+    public ResponseEntity<?> updateUser(HttpServletRequest request, @RequestBody Users user) {
+        try {
+            Users update = getUserFromToken(request);
+            if (user.getFullname() != null) update.setFullname(user.getFullname());
+            if (user.getEmail() != null) update.setEmail(user.getEmail());
+            if (user.getIdentification() != null) update.setIdentification(user.getIdentification());
+            if (user.getPhone() != null) update.setPhone(user.getPhone());
+            if (user.getBirthday() != null) update.setBirthday(user.getBirthday());
+            if (user.getPassword() != null && user.getPassword().length() >= 6)
+                update.setPassword(passwordEncoder.encode(user.getPassword()));
+
+            Users savedUser = userServices.saveUsers(update);
+            return ResponseEntity.ok(savedUser);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Get all users (for admin) (done)
     @GetMapping("/all")
-    public List<Users> getAllUsers() {
-        return userServices.getAllUsers();
-    }
-
-    // delete user (none authourized)
-    @DeleteMapping("/{userId}")
-    public String deleteUser(@PathVariable String userId) {
-        Users user = userServices.getUsersbyId(new ObjectId(userId));
-        if (user != null) {
-            userServices.deleteUserById(user.getId());
-            return "Deleted successfully !!!";
+    public ResponseEntity<?> getAllUsers(HttpServletRequest request) {
+        try {
+            Users currentUser = getUserFromToken(request);
+            if (currentUser.getRole() != 1) { // Chỉ admin
+                return ResponseEntity
+                        .status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Access denied: Admin only"));
+            }
+            List<Users> users = userServices.getAllUsers();
+            return ResponseEntity.ok(users);
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
         }
-        return "User not found !";
     }
 
-    // add vehicle of user
-    @PostMapping("/{userId}/vehicles")
-    public Users addVehicle(@PathVariable String userId, @RequestBody Vehicles vehicle) {
-        return userServices.addVehicleToUser(new ObjectId(userId), vehicle);
+    // Delete user (admin only) (done)
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<?> deleteUser(@PathVariable String userId, HttpServletRequest request) {
+        try {
+            Users currentUser = getUserFromToken(request);
+            if (currentUser.getRole() != 1) {
+                return ResponseEntity
+                        .status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Access denied: Admin only"));
+            }
+
+            Users user = userServices.getUsersbyId(userId);
+            if (user != null) {
+                userServices.deleteUserById(user.getId());
+                return ResponseEntity.ok(Map.of("message", "Deleted successfully"));
+            } 
+            else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found"));
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 
-    // update vehicle of user
-    @PutMapping("/{userId}/vehicles/{vehicleId}")
-    public Vehicles updateVehicle(
-            @PathVariable String userId,
+    // Logout (done)
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        try {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                Date expiry = JwtUtil.getExpiration(token); // cần tạo method getExpiration trong JwtUtil
+                TokenBlackList blacklistedToken = new TokenBlackList(token, expiry);
+                tokenBlacklist.save(blacklistedToken);
+            }
+            return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Logout failed"));
+        }
+    }
+
+    // add vehicle (done)
+    @PostMapping("/add/vehicles")
+    public ResponseEntity<?> addVehicle(HttpServletRequest request, @RequestBody Vehicles vehicle) {
+        try{
+            Users addvehicle = getUserFromToken(request);
+            if (vehicle.getIdentifier() != null) {
+                String cleanedPlate = vehicle.getIdentifier().replaceAll("[-.]", "");
+                vehicle.setIdentifier(cleanedPlate);
+            }
+            Users user = userServices.addVehicleToUser(addvehicle.getId(), vehicle);
+            return ResponseEntity.ok(user);
+        }
+        catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // update vehicle (done)
+    @PutMapping("/update/vehicles/{vehicleId}")
+    public ResponseEntity<?> updateVehicle(
+            HttpServletRequest request,
             @PathVariable String vehicleId,
             @RequestBody Vehicles vehicle) {
-
-        Users user = userServices.getUsersbyId(new ObjectId(userId));
-        if (user == null) {
-            throw new RuntimeException("User not found");
-        }
-
-        for (Vehicles v : user.getVehicles()) {
-            if (v.getId().toHexString().equals(vehicleId)) {
-                if (vehicle.getType() != null) v.setType(vehicle.getType());
-                if (vehicle.getIdentifier() != null) v.setIdentifier(vehicle.getIdentifier());
-                userServices.saveUsers(user); 
-                return vehicleRepository.save(v);
+        try{
+            Users user = getUserFromToken(request);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not found"));
             }
+            for (Vehicles v : user.getVehicles()) {
+                if (v.getId().equals(vehicleId)) {
+                    if (vehicle.getType() != null) v.setType(vehicle.getType());
+                    if (vehicle.getIdentifier() != null){
+                        String cleanedPlate = vehicle.getIdentifier().replaceAll("[-.]", "");
+                        v.setIdentifier(cleanedPlate);
+                    } 
+                    userServices.saveUsers(user); 
+                    vehicleRepository.save(v);
+                }
+            }
+            return ResponseEntity.ok(user);
         }
-
-        throw new RuntimeException("Vehicle not found in user");
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Vehicle not found"));
+        }
     }
 
-    // delete vehicle of user
-    @DeleteMapping("/{userId}/vehicles/{vehicleId}")
-    public String deleteVehicle(
-            @PathVariable String userId,
-            @PathVariable String vehicleId) {
-
-        Users user = userServices.getUsersbyId(new ObjectId(userId));
-
-        for (Vehicles v : user.getVehicles()) {
-            if (v.getId().toHexString().equals(vehicleId)) {
-                user.getVehicles().remove(v);
-                userServices.saveUsers(user); 
-                userServices.deleteVehicleById(new ObjectId(vehicleId));
-                return "Deleted successfully !!!";
+    // delete vehicle (done)
+    @DeleteMapping("/delete/vehicles/{vehicleId}")
+    public ResponseEntity<?> deleteVehicle(
+            @PathVariable String vehicleId,
+            HttpServletRequest request) {
+        try{
+            Users user = getUserFromToken(request);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not found"));
             }
+            user.getVehicles().removeIf(st -> st.getId().equals(vehicleId));
+            userServices.saveUsers(user); 
+            userServices.deleteVehicleById(vehicleId);
+            return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(Map.of("message", "Deleted successfully"));
         }
-        return "Vehicle not found !";
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Vehicle not found"));
+        }
     }
 
-    // get all vehicles
+    // get all vehicles (for admin) (done)
     @GetMapping("/vehicles")
-    public List<Vehicles> getAllVehicles() {
-        return userServices.getAllVehicles();
-    }
-
-    // get vehicle by identifier
-    @GetMapping("/vehicles/{identifier}")
-    public Vehicles getVehicleByIdentifier(@PathVariable String identifier) {
-        return userServices.getVehicleByIdentifier(identifier);
-    }
-
-    // get vehicle by id
-    @GetMapping("/vehicles/id/{vehicleId}")
-    public Vehicles getVehicleById(@PathVariable String vehicleId) {
-        return userServices.getVehiclebyId(new ObjectId(vehicleId));
-    }
-
-    // delete manager
-    @PutMapping("delete/manager/{userId}")
-    public Users deleteManager(@PathVariable String userId){
-        Users user = userServices.getUsersbyId(new ObjectId(userId));
-        user.setRole(0);
-        List<String> stations = user.getStations();
-        for(String st : stations){
-            Chargers chg = chargerRepositories.findById(st);
-            chg.setProcess("unprocessed");
-            chargerRepositories.save(chg);
+    public ResponseEntity<?> getAllVehicles(HttpServletRequest request) {
+        try {
+            Users currentUser = getUserFromToken(request);
+            if (currentUser.getRole() != 1) { // Chỉ admin
+                return ResponseEntity
+                        .status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Access denied: Admin only"));
+            }
+            List<Vehicles> vehicles =  userServices.getAllVehicles();
+            return ResponseEntity.ok(vehicles);
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
         }
-        user.getStations().clear();
-        return userServices.saveUsers(user);
+    }
+
+    // // get vehicle by identifier
+    // @GetMapping("/idevehicles/{identifier}")
+    // public Vehicles getVehicleByIdentifier(@PathVariable String identifier) {
+    //     return userServices.getVehicleByIdentifier(identifier);
+    // }
+
+    // get vehicle by id (done)
+    @GetMapping("/vehicles/{vehicleId}")
+    public ResponseEntity<?> getVehicleById(HttpServletRequest request,@PathVariable String vehicleId) {
+        try {
+            Users user = getUserFromToken(request);
+            Vehicles v = userServices.getVehiclebyId(vehicleId);
+            if(v.getUserId().equals(user.getId())) return ResponseEntity.ok(v);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Vehicle not found"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // delete manager (for admin) (done)
+    @PutMapping("delete/manager/{userId}")
+    public ResponseEntity<?> deleteManager(@PathVariable String userId, HttpServletRequest request){
+    
+        try{
+            Users currentUser = getUserFromToken(request);
+            if (currentUser.getRole() != 1) {
+                return ResponseEntity
+                        .status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Access denied: Admin only"));
+            }
+            Users user = userServices.getUsersbyId(userId);
+            if (user != null) {
+                user.setRole(0);
+                List<String> stations = user.getStations();
+                if (stations == null || stations.isEmpty()) {
+                    promRepositories.deleteByUserId(userId);
+                    userServices.saveUsers(user);
+                    return ResponseEntity.status(HttpStatus.ACCEPTED)
+                            .body(Map.of("message", "Deleted successfully"));
+                }
+                for(String st : stations){
+                    Chargers chg = chargerRepositories.findById(st)
+                        .orElseThrow(() -> new RuntimeException("Charger not found"));
+                    chg.setProcess("unprocessed");
+                    chargerRepositories.save(chg);
+                }
+                user.getStations().clear();
+                promRepositories.deleteByUserId(userId);
+                userServices.saveUsers(user);
+                return ResponseEntity.status(HttpStatus.ACCEPTED)
+                            .body(Map.of("message", "Deleted successfully"));
+            }
+            else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found"));
+            }
+        }
+        catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 }

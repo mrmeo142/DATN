@@ -1,6 +1,5 @@
 package com.example.charging_station_web.services;
 
-import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import com.example.charging_station_web.repositories.AccountRepositories;
@@ -10,7 +9,6 @@ import com.example.charging_station_web.entities.Users;
 import com.example.charging_station_web.entities.Vehicles;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserServices {
@@ -32,13 +30,20 @@ public class UserServices {
     }
 
     // get users by Id
-    public Users getUsersbyId(ObjectId userId) {
-        return usersRepositories.findById(userId.toHexString());
+    public Users getUsersbyId(String userId) {
+        return usersRepositories.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
     }
-    // delete user (none authourized)
-    public void deleteUserById(ObjectId userId) {
-        vehicleRepository.deleteByUserId(userId.toHexString());
-        accountRepositories.deleteByUserId(userId.toHexString());
+
+    // get user by email
+    public Users getUsersbyEmail(String email) {
+        return usersRepositories.findByEmail(email);
+    }
+    
+    // delete user 
+    public void deleteUserById(String userId) {
+        vehicleRepository.deleteByUserId(userId);
+        accountRepositories.deleteByUserId(userId);
         usersRepositories.deleteById(userId);
     }
 
@@ -48,18 +53,13 @@ public class UserServices {
     }
 
     // add vehicle to user
-    public Users addVehicleToUser(ObjectId userId, Vehicles vehicle) {
-        Optional<Users> userOptional = usersRepositories.findById(userId); // optional de xu ly ca truong hop null
-        
-        if (userOptional.isPresent()) {
-            Users user = userOptional.get();
-            vehicle.setUserId(userId.toHexString()); // tohexstring chuyen objectid sang string
+    public Users addVehicleToUser(String userId, Vehicles vehicle) {
+        Users user = usersRepositories.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+            vehicle.setUserId(userId);
             user.getVehicles().add(vehicle);
-            //System.out.println(userId.toHexString());
             vehicleRepository.save(vehicle);
-            return usersRepositories.save(user);
-        }
-        throw new RuntimeException("User not found with id: " + userId);
+        return usersRepositories.save(user);
     }
 
     // save vehicle
@@ -68,8 +68,9 @@ public class UserServices {
     }
 
     // get vehicle by Id
-    public Vehicles getVehiclebyId(ObjectId vehicleId) {
-        return vehicleRepository.findById(vehicleId.toHexString());
+    public Vehicles getVehiclebyId(String vehicleId) {
+        return vehicleRepository.findById(vehicleId)
+            .orElseThrow(() -> new RuntimeException("Vehicle not found"));
     }
 
     // get all vehicles
@@ -78,7 +79,7 @@ public class UserServices {
     }
 
     // delete vehicle from user
-    public void deleteVehicleById(ObjectId vehicleId) {
+    public void deleteVehicleById(String vehicleId) {
         vehicleRepository.deleteById(vehicleId);
     }
 

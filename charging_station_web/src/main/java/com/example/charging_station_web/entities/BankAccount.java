@@ -1,6 +1,5 @@
 package com.example.charging_station_web.entities;
 
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -12,7 +11,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class BankAccount {
     @Id
-    private ObjectId id;
+    private String id;
     private String userId;
     private String bankId;
     private String accountNumber;

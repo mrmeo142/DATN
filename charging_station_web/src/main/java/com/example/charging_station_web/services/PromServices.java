@@ -22,7 +22,8 @@ public class PromServices {
 
     // get promotion 
     public Promotion getPromById(String id){
-        return promRepositories.findById(id);
+        return promRepositories.findById(id)
+            .orElseThrow(() -> new RuntimeException("Registration not found"));
     }
 
     // get all promotions

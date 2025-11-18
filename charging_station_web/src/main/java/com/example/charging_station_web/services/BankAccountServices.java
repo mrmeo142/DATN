@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import com.example.charging_station_web.entities.BankAccount;
-
 import com.example.charging_station_web.repositories.AccountRepositories;
 
 @Service
@@ -23,7 +22,8 @@ public class BankAccountServices {
 
     // find bank account by id
     public BankAccount findBankAccountById(String id) {
-        return accountRepositories.findById(id);
+        return accountRepositories.findById(id)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
     }
 
     // get all bank accounts
@@ -47,14 +47,10 @@ public class BankAccountServices {
         return accountRepositories.findByBankId(bankId);
     }
 
-    // delete bank account by userid
-    public String deleteBankAccountByUserId(String userId) {
-        accountRepositories.deleteByUserId(userId);
-        return "Deleted successfully";
-    }
+    // // delete bank account by userid
+    // public String deleteBankAccountByUserId(String userId) {
+    //     accountRepositories.deleteByUserId(userId);
+    //     return "Deleted successfully";
+    // }
 
-    // delete bank account by bank id
-    public void deleteBankAccountByBankId(String bankId) {
-        accountRepositories.deleteByBankId(bankId);
-    }
 }

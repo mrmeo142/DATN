@@ -2,7 +2,6 @@ package com.example.charging_station_web.services;
 
 import java.util.List;
 
-import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import com.example.charging_station_web.entities.Banks;
 import com.example.charging_station_web.repositories.BanksRepositories;
@@ -24,8 +23,9 @@ public class BankServices {
     }
 
     // find bank by id
-    public Banks findBankById(ObjectId id) {
-        return banksRepositories.findById(id.toHexString());
+    public Banks findBankById(String id) {
+        return banksRepositories.findById(id)
+                .orElseThrow(() -> new RuntimeException("Bank not found" ));
     }
     
     // get all banks
@@ -34,8 +34,8 @@ public class BankServices {
     }
 
     // delete bank by id
-    public String deleteBankById(ObjectId bankId) {
-        accountRepositories.deleteByBankId(bankId.toHexString());
+    public String deleteBankById(String bankId) {
+        accountRepositories.deleteByBankId(bankId);
         banksRepositories.deleteById(bankId);
         return "Deleted successfully";
     }

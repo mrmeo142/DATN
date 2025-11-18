@@ -3,7 +3,6 @@ package com.example.charging_station_web.entities;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -17,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Bills {
     @Id
-    private ObjectId id;
+    private String id;
     private String userId;
     private BillType billType;
     private Double amount;
