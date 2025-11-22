@@ -83,11 +83,9 @@ def detect_plate(image_bgr, conf_thresh=0.48):
     return plates
 
 # ------------------- API NHẬN ẢNH -------------------
-@app.route("/detect", methods=["POST"])
-def detect_api():
-    threading.Thread(target=detect).start()
+@app.route("/detect/<chargerId>", methods=["POST"])
 
-def detect():
+def detect(chargerId):
     if 'image' not in request.files:
         return jsonify({"error": "Không có tệp ảnh"}), 400
     file = request.files['image']

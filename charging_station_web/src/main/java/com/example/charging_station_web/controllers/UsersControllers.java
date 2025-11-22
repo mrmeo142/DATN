@@ -77,8 +77,12 @@ public class UsersControllers {
         }
 
         // Kiểm tra email hợp lệ
-        if (user.getEmail() == null || !user.getEmail()
-                        .matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+        if (user.getEmail() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Email is required"));
+        }
+
+        if (!user.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Invalid email format"));
         }

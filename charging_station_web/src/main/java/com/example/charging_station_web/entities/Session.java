@@ -1,4 +1,6 @@
 package com.example.charging_station_web.entities;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -30,7 +32,8 @@ public class Session {
     
     public Double getDuration() {
         if (startedAt != null && endedAt != null) {
-            return Duration.between(startedAt, endedAt).toMillis()/3600000.0;
+            double hours = Duration.between(startedAt, endedAt).toMillis()/3600000.0;
+            return new BigDecimal(hours).setScale(3, RoundingMode.CEILING).doubleValue();
         } else {
             return 0.0;
         }

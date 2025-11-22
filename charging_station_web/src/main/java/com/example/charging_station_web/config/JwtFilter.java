@@ -33,6 +33,12 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = null;
         String email = null;
 
+        // --- Bỏ qua WebSocket endpoint ---
+        if (request.getRequestURI().startsWith("/ws/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
             email = JwtUtil.extractEmail(token);

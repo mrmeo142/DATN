@@ -22,6 +22,7 @@ public class MQTTService {
 
     private MqttClient mqttClient;
     private final SimpMessagingTemplate messagingTemplate;
+
     @Autowired
     private ApplicationEventPublisher eventPublisher;
     public MQTTService(SimpMessagingTemplate messagingTemplate) {
@@ -50,15 +51,14 @@ public class MQTTService {
                     String[] s = topic.split("/");
                     String id = s[2];
                     String billId = s[3];
-                    //System.out.println("id = " + id + " billid = " + billId + ", payload=" + payload);
+
                     payload = payload.replaceAll(",}", "}"); // fix JSON lỗi
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode node = mapper.readTree(payload);
-
                     Double current = node.get("ax").asDouble();
                     Double voltage = node.get("ay").asDouble();
-                    Double temp = node.get("az").asDouble();
-                    eventPublisher.publishEvent(new MqttData(id, billId, current, voltage, temp));
+                    Double percenatge = node.get("az").asDouble();
+                    eventPublisher.publishEvent(new MqttData(id, billId, current, voltage, percenatge));
                     messagingTemplate.convertAndSend("/topic/mqtt", 
                         "{ \"deviceId\":\"" + id + "\", \"billId\":\"" + billId + "\", \"data\":" + payload + " }");
                 }
@@ -94,4 +94,19 @@ public class MQTTService {
     public boolean isConnected() {
         return mqttClient != null && mqttClient.isConnected();
     }
+
+    // Gửi lệnh chụp ảnh
+    public void sendCaptureCommand(String deviceId, String payload) {
+        try {
+            String topic = "esp32/capture/" + deviceId; 
+            MqttMessage message = new MqttMessage(payload.getBytes());
+            message.setQos(1);
+
+            mqttClient.publish(topic, message);
+            System.out.println("Published to " + topic + ": " + payload);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

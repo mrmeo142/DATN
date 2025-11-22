@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DHT - EV Charging Stations</title>
+  <meta name="title" content="DHT - EV Charging Stations">
+  <meta name="description" content="This is a vahicle charging html template made by codewithsadee">
+  <link rel="shortcut icon" href="./assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="./assets/css/style.css">
+  <link rel="stylesheet" href="./assets/css/user.css">
+
+</head>
+
+<body>
+  <header class="header" data-header id = "header">
+    <div class="container">
+
+      <a href="index.html" class="logo">
+        <img src="./assets/images/logo.svg" width="160" height="50" alt="logo">
+      </a>
+      <div class="search-bar">
+        <input type="text" placeholder="What are you looking for?">
+        <button><i class="fa-solid fa-magnifying-glass"></i></button>
+      </div>
+      <div class="header-action">
+        <a href="#" class="btn btn-primary" id="loginBtn">
+          <span class="span">User</span>          
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-container">
+      <aside class="sidebar-left">
+      <nav>
+        <ul>
+          <li class="active"><i class="fa-solid fa-charging-station"></i>  CHARGING</li>
+          <li class="profile-btn"><i class="fa-solid fa-user"></i>  PROFILE</li>
+          <li><i class="fa-solid fa-wallet"></i>  WALLET</li>
+          <li class="registration-btn"><i class="fa-regular fa-address-card"></i>  REGISTRATION</li>
+          <li class="authen-btn"><i class="fa-solid fa-shield-halved"></i>  AUTHENTICATION</li>
+        </ul>
+      </nav>
+    </aside>
+
+    <section class="main-content">
+      <div class="vehicle-display">
+        <img src="./assets/images/otodien.png" alt="Electric Car">
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card battery-card">
+          <div class="stat-card info-card">
+            <p>Battery</p>
+            <h3 id="batteryPercentage">0 %</h3>
+            <p>Time</p>
+            <h3 id="time">0h</h3>
+          </div>
+          <div class="battery-visual">
+            <div class="battery-bar-container">
+              <div class="battery-level"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card info-card">
+          <p>Total Charged</p>
+          <h3 id = "totalCharger">0 kWh</h3>
+          <p>Voltage</p>
+          <h3 id="voltageValue">0 V</h3>
+          <p>Current</p>
+          <h3 id="currentValue">0 A</h3>
+        </div>
+      </div>
+
+        <div class="cost-summary">
+          <div class="cost-item">
+            <p>Total Charged</p>
+            <span id = "totalCharger1">0 kWh</span>
+          </div>
+          <div class="cost-item">
+            <p>Cost/kWh</p>
+            <span id="price">0.09 VND</span>
+          </div>
+          <div class="cost-item total-cost">
+            <p>Total Cost</p>
+            <h3 id="totalCost">0.00 VND</h3>
+          </div>
+        </div>
+
+      <div class="buttons-container">
+        <button class="charging-btn" id="chargingActionBtn">Start Charging</button>
+        <button id="paymentBtn" class="payment-btn" disabled style="display: none;">Payment</button>
+      </div>
+
+      <!-- BILL POPUP – GIỮ NGUYÊN ID, CHỈ ĐỔI CLASS -->
+<div id="billModal" class="bill" style="display: none;">
+  <div class="bill-content">
+    <div class="bill-header">
+      <h2 class="bill-describe">HÓA ĐƠN SẠC ĐIỆN</h2>
+    </div>
+    <div class="bill-body">
+      <div class="bill-info">
+        <p><strong>Khách hàng:</strong> <span id="billUserName">Loading...</span></p>
+        <p><strong>Mô tả:</strong> <span id="billDescription">Electricity Bill</span></p>
+        <p><strong>Mã trạm sạc:</strong> <span id="billChargerId">-</span></p>
+        <p><strong>Biển số xe:</strong> <span id="billVehicle">-</span></p>
+        <p><strong>Tổng thời gian sạc:</strong> <span id="billTotalTime">0 phút</span></p>
+        <p><strong>Chi tiết thời gian sạc:</strong></p>
+        <ul id="billTimeList"></ul>
+        <p><strong>Tổng tiền:</strong> <span id="billAmount">0 VND</span> </p>
+      </div>
+    </div>
+    <div class="bill-footer">
+      <button id="cancelBillBtn" class="bill-cancel-btn">Hủy</button>
+      <button id="submitPaymentBtn" class="bill-submit-btn">Thanh toán ngay</button>
+    </div>
+  </div>
+</div>
+
+      <div class="chart-summary">
+      </div>
+    </section>
+
+    <!-- PROFILE SECTION (ẩn ban đầu) -->
+    <section class="profile-page">
+      <h2>User Profile</h2>
+      <div class="profile-grid">
+        <!-- FORM Personal Information -->
+        <form class="profile-card" id="personalForm">
+          <h3>Personal Information</h3>
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="fullName">
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password">
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" name="phone">
+          </div>
+          <div class="form-group">
+            <label>Birthday</label>
+            <input type="date" name="birthday">
+          </div>
+          <button type="submit" class="save-btn">Save Changes</button>
+        </form>
+
+        <!-- FORM Vehicle Information -->
+        <div class="profile-card">
+          <h3>Vehicle List</h3>
+          <table class="vehicle-table">
+            <thead>
+              <tr>
+                <th>Vehicle Type</th>
+                <th>License Plate</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="vehicleTableBody">
+              <tr>
+                <td>EV Car</td>
+                <td>51A-123.45</td>
+                <td>
+                  <button class="edit-btn">Edit</button>
+                  <button class="delete-btn">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <button class="add-btn" id="addVehicleBtn">+ Add Vehicle</button>
+        </div>
+        <div class="modal" id="vehicleModal">
+          <div class="modal-content">
+            <button class="cancel" id="cancelModalBtn"><i class="fa-solid fa-rectangle-xmark"></i></button>
+            <h3 id="modalTitle">Add Vehicle</h3>
+            <div class="form-group">
+              <label>Vehicle Type</label>
+              <select class = "selectTyple" id="vehicleType">
+                <option value="EV Car">EV Car</option>
+                <option value="Electric Bike">Electric Bike</option>
+                <option value="Electric Motorbike">Electric Motorbike</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>License Plate</label>
+              <input type="text" id="licensePlate" placeholder="VD: 51A-888.88">
+            </div>
+
+            <div class="modal-actions">
+              <button class="save-btn" id="saveVehicleBtn">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REGISTRATION SECTION (ẩn ban đầu) -->
+    <section class="registration-page">
+        <div class="registration">
+          <form class="registration-form">
+            <h2>Registration</h2>
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" placeholder="Enter full name">
+            </div>
+
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" placeholder="Enter email">
+            </div>
+
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" placeholder="Enter password">
+            </div>
+
+            <div class="form-group">
+              <label>Identification (CCCD/CMND)</label>
+              <input type="text" placeholder="Enter ID number">
+            </div>
+
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="text" placeholder="Enter phone number">
+            </div>
+
+            <div class="form-group">
+              <label>Birthday</label>
+              <input type="date">
+            </div>
+
+            <div class="form-group">
+              <label>Address</label>
+              <input type="text" placeholder="Enter address">
+            </div>
+
+            <button type="submit" class="save-btn" id="registration-form">Register</button>
+            <div id="registrationStatus" class="registration-status pending" style="display:none;">Pending</div>
+          </form>
+        </div>
+    </section>
+
+   <!-- AUTHENTICATION SECTION -->
+    <section class="authentication-page">
+      <div class="auth-container">
+        <h2>Identity Verification</h2>
+        <form id="authForm">
+          <label>Photo of front of ID card/CCCD:</label>
+          <input type="file" id="frontImage" accept="image/*" required>
+          <div class="img-preview-container"><img id="frontPreview" class="avatar-preview" /></div>
+
+          <label>Photo of back of ID card/CCCD:</label>
+          <input type="file" id="backImage" accept="image/*" required>
+          <div class="img-preview-container"><img id="backPreview" class="avatar-preview" /></div>
+          <button type="submit" class="verify-btn">Verify</button>
+        </form>
+        <div id="authStatus" class="auth-status" style="display:none;">Authenticated</div>
+      </div>
+    </section>
+
+    <!-- WALLET SECTION (ẩn ban đầu) -->
+    <section class="wallet-page">
+      <div class="wallet-container">
+        <div class="wallet-actions">
+    <div id="walletTab" class="active">My Wallet</div>
+    <div id="historyTab">History Bills</div>
+  </div>
+
+  <!-- Content chính gói trong 1 div -->
+  <div class="wallet-content">
+
+    <!-- My Wallet -->
+    <div class="wallet-section active">
+
+      <!-- Bên trái -->
+      <div class="wallet-left">
+        <div class="wallet-card">
+          <h2>John Doe</h2>
+          <p>Balance: $1,500</p>
+        </div>
+
+        <div class="bank-selection">
+          <label>Connect a bank account:</label>
+          <select id="bankSelect">
+            <option value="">Select Bank</option>
+            <option value="Bank A">Bank A</option>
+            <option value="Bank B">Bank B</option>
+            <option value="Bank C">Bank C</option>
+          </select>
+        </div>
+
+        <div class="bank-form" id="bankForm">
+          <input class="account" type="text" placeholder="Account Number" id="accountNumber">
+          <input class="account" type="text" placeholder="Account Name" id="accountName">
+          <button class="submitwallet" id="connectBank">Connect</button>
+        </div>
+      </div>
+
+      <!-- Bên phải -->
+      <div class="wallet-right">
+        <h3>Select Account</h3>
+        <div class="account-dropdown">
+          <div class="selected">-- Choose Account --</div>
+          <div class="options">
+            <div class="option">Main Account <button class="accountdelete">Delete</button></div>
+            <div class="option">Savings Account <button class="accountdelete">Delete</button></div>
+            <div class="option">Business Account <button class="accountdelete">Delete</button></div>
+          </div>
+        </div>
+
+        <h3>Transaction Method</h3>
+        <div class="method-selection">
+          <div id="deposit">Deposit</div>
+          <div id="withdraw">Withdraw</div>
+        </div>
+
+        <div class="amount-form" id="amountForm">
+          <input class="amount account" type="number" placeholder="Enter amount" id="amountInput">
+          <button class="submitwallet" id="finishBtn">Finished</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- History Bills -->
+    <div class="history-section">
+      <h3>Payment History</h3>
+      <div class="history-list">
+        <div class="history-item">
+          <span>John Doe</span>
+          <span>123456</span>
+          <span>Deposit</span>
+          <span>$500</span>
+          <span>2025-11-10</span>
+        </div>
+        <div class="history-item">
+          <span>John Doe</span>
+          <span>123456</span>
+          <span>Withdraw</span>
+          <span>$200</span>
+          <span>2025-11-08</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+      </div>
+    </section>
+
+    <aside class="sidebar-right">
+      <div class="map-placeholder">
+        <img src="assets/images/thumbnail-web-ctv-5-4.jpg" alt="Map Placeholder">
+      </div>
+    </aside>
+  </main>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script src="./assets/js/user.js"></script>
+</body>
+</html>

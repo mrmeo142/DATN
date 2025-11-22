@@ -1,14 +1,15 @@
 package com.example.charging_station_web.services;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import com.example.charging_station_web.entities.Bills;
 import com.example.charging_station_web.entities.Chargers;
 import com.example.charging_station_web.entities.ChargingLog;
+import com.example.charging_station_web.entities.OverAmountEvent;
 import com.example.charging_station_web.entities.Session;
 import com.example.charging_station_web.repositories.AccountRepositories;
 import com.example.charging_station_web.repositories.BillsRepositories;
@@ -127,6 +128,7 @@ public class BillServices {
         bill.setManagerId(charger.getMngId());
         bill.setChargerId(chargerId);
         bill.setCreatedAt(LocalDateTime.now());
+        bill.setAction("Charging");
         bill.setDescription("Electricity Bill");
         bill.setPaid(false);
         bill.setBillType(BillType.ElECTRIC);
@@ -135,7 +137,7 @@ public class BillServices {
         bill.setVehicleId(vehicleId);
         Bills b = billsReponsitories.save(bill);
         String billid = b.getId();
-        mqttService.publishToDevice( chargerId, billid, submit );
+        mqttService.publishToDevice(chargerId, billid, submit );
         return b;
     }
 
@@ -145,20 +147,22 @@ public class BillServices {
         Double price = priceServices.getPrice().getPrice();
         Bills bill = billsReponsitories.findById(billId)
                         .orElseThrow(() -> new RuntimeException("Bill not found"));;
-        LocalDateTime pause = LocalDateTime.now();
         List<ChargingLog> logs =  logRepositories.findByBillId(billId);
         Double v = 0.0, i = 0.0;
+        LocalDateTime pause = null;
         for(ChargingLog chg : logs){
             v += chg.getVoltage();
             i += chg.getCurrent();
+            pause = chg.getTimestamp();
         }
         v = v/logs.size();
         i = i/logs.size();
-        Double delta = Duration.between(bill.getCreatedAt(), pause).toMillis()/3600000.0;
+        Session s = new Session(bill.getCreatedAt(), pause);
+        Double delta = s.getDuration();
         Double cost = v * i * delta * price;
         Double amount = bill.getAmount();
-        bill.setAmount(amount + cost);
-        Session s = new Session(bill.getCreatedAt(), pause);
+        bill.setAmount(amount + Math.abs(cost));
+        bill.setAction("Stop");
         bill.addSession(s);
         bill.setPauseAt(pause);
         bill.setSubmitType(submit);
@@ -171,6 +175,7 @@ public class BillServices {
         Bills bill = billsReponsitories.findById(billId)
                         .orElseThrow(() -> new RuntimeException("Bill not found"));
         bill.setCreatedAt(LocalDateTime.now());
+        bill.setAction("Charging");
         bill.setSubmitType(submit);
         return billsReponsitories.save(bill);
     }
@@ -190,8 +195,8 @@ public class BillServices {
         Double mng = manager.getBalance();
         Double balance = user.getBalance();
         Double amount = bill.getAmount();
-        user.setBalance(balance + amount);
-        manager.setBalance(mng - amount);
+        user.setBalance(balance - amount);
+        manager.setBalance(mng + amount);
         userRepositories.save(user);
         userRepositories.save(manager);
         bill.setPaid(true);
@@ -200,4 +205,15 @@ public class BillServices {
         chargerRepositories.save(charger);
         return billsReponsitories.save(bill);
     }
+
+    @EventListener
+    public void handleOverAmountEvent(OverAmountEvent event) {
+        String billId = event.getBillId();
+        Bills bill = billsReponsitories.findById(billId)
+                        .orElseThrow(() -> new RuntimeException("Bill not found"));
+        mqttService.publishToDevice(bill.getChargerId(), billId, "OFF");
+        System.out.println("Insufficient balance = " + bill.getUserId());
+        //socketService.notifyUser(bill.getUserId(), "Insufficient balance");
+    }
+
 }

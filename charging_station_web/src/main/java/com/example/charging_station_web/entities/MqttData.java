@@ -10,5 +10,5 @@ public class MqttData {
     private String billId;
     private Double current;
     private Double voltage;
-    private Double temp;
+    private Double percenatge;
 }

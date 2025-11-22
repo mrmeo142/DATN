@@ -35,6 +35,10 @@ public class UserServices {
             .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    public Users findByEmail(String email) {
+    return usersRepositories.findByEmail(email);
+}
+
     // get user by email
     public Users getUsersbyEmail(String email) {
         return usersRepositories.findByEmail(email);

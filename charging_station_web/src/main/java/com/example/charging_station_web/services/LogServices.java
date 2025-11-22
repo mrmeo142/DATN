@@ -1,29 +1,42 @@
 package com.example.charging_station_web.services;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.charging_station_web.entities.Bills;
 import com.example.charging_station_web.entities.Price;
+import com.example.charging_station_web.entities.Users;
 import com.example.charging_station_web.entities.ChargingLog;
 import com.example.charging_station_web.entities.MqttData;
+import com.example.charging_station_web.entities.OverAmountEvent;
 import com.example.charging_station_web.repositories.LogRepositories;
 
 @Service
 public class LogServices {
 
     private final LogRepositories logRepositories;
+    private final UserServices userServices;
     private final BillServices billServices;
     private final PriceServices priceServices;
+    private final ApplicationEventPublisher applicationEventPublisher;
     private final SimpMessagingTemplate messagingTemplate;
-    public LogServices(LogRepositories logRepositories, BillServices billServices, PriceServices priceServices, SimpMessagingTemplate messagingTemplate) {
+    public LogServices(LogRepositories logRepositories, BillServices billServices, 
+                       PriceServices priceServices, SimpMessagingTemplate messagingTemplate,
+                       UserServices userServices, ApplicationEventPublisher applicationEventPublisher) {
         this.logRepositories = logRepositories;
         this.billServices = billServices;
         this.priceServices = priceServices;
+        this.userServices = userServices;
+        this.applicationEventPublisher = applicationEventPublisher;
         this.messagingTemplate = messagingTemplate;
     }
 
@@ -35,15 +48,21 @@ public class LogServices {
         String billId = event.getBillId();
         Double current = event.getCurrent();
         Double voltage = event.getVoltage();
-        Double temperature = event.getTemp();
+        Double percenatge = event.getPercenatge();
         Price p = priceServices.getPrice();
         Bills bill = billServices.findBillById(billId);
+        Users user = userServices.getUsersbyId(bill.getUserId());
         LocalDateTime create = bill.getCreatedAt();
         LocalDateTime now = LocalDateTime.now();
-        Double time = Duration.between(create, now).toMillis()/3600000.0;
-        //Double delta = Duration.between(lastTime, now).toMillis()/1000.0;
-        Double amount = current * voltage * time * p.getPrice();
-        System.out.println(p.getPrice());
+        Double time = new BigDecimal(Duration.between(create, now).toMillis()/3600000.0)
+                            .setScale(3, RoundingMode.DOWN).doubleValue();
+        Double cost = bill.getAmount();
+        Double totalCharger = Math.abs(current * voltage * time);
+        Double amount = totalCharger * p.getPrice() + cost;
+        
+        if((user.getBalance() - amount) < p.getPrice() * 4){
+            applicationEventPublisher.publishEvent(new OverAmountEvent(bill.getId()));
+        }
 
         if(lastTime == null){
             if(time >= 10.0/3600.0){
@@ -51,11 +70,11 @@ public class LogServices {
             chg.setChargerId(chargerId);
             chg.setBillId(billId);
             chg.setCurrent(current);
-            chg.setTemperature(temperature);
+            chg.setPercentage(percenatge);
             chg.setTimestamp(now);
             chg.setVoltage(voltage);
             logRepositories.save(chg);
-            System.out.println(">>> Lưu log");
+            System.out.println("Lưu log");
             lastTime = now;
             }
         }else{
@@ -65,7 +84,7 @@ public class LogServices {
             chg.setChargerId(chargerId);
             chg.setBillId(billId);
             chg.setCurrent(current);
-            chg.setTemperature(temperature);
+            chg.setPercentage(percenatge);
             chg.setTimestamp(now);
             chg.setVoltage(voltage);
             logRepositories.save(chg);
@@ -73,6 +92,14 @@ public class LogServices {
             }
         }
         System.out.println(billId + " : " +  amount + "vnd");
-        messagingTemplate.convertAndSend("/topic/amount/" + billId, amount);
+        Map<String, Double> msg = new HashMap<>();
+        msg.put("current", current);
+        msg.put("voltage", voltage);
+        msg.put("percenatge", percenatge);
+        msg.put("time", time);
+        msg.put("amount", amount);
+        msg.put("price", p.getPrice());
+        msg.put("totalCharger", totalCharger);
+        messagingTemplate.convertAndSend("/topic/log/" + billId, msg);
     }
 }

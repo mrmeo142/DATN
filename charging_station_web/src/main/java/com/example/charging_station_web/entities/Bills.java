@@ -30,6 +30,7 @@ public class Bills {
     private String vehicleId;
     private LocalDateTime createdAt;
     private LocalDateTime pauseAt;
+    private String action;
     private String userName;
     private String submitType;
     private ArrayList<Session> timeUse = new ArrayList<>();

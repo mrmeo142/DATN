@@ -30,7 +30,9 @@ public class SecurityConfig {
                 return corsConfig;
             }))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/upload/**").permitAll() // public cho ESP32 /api/upload/**
                 .requestMatchers("/login", "/create", "/logout").permitAll() // public endpoints
+                .requestMatchers("/ws/**").permitAll()
                 .anyRequest().authenticated() // các endpoint khác require token
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
