@@ -56,7 +56,7 @@ public class UploadController {
             byte[] imageBytes = Base64.getDecoder().decode(imageBase64.replaceAll("\\s", ""));
 
             // Gửi sang server AI
-            String url = "http://192.168.0.100:8000/detect/" + chargerId;
+            String url = "http://192.168.0.102:8000/detect/" + chargerId;
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 

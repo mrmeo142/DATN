@@ -159,28 +159,51 @@ public class BillControllers {
     }
 
     // get all bills (done)
-    @GetMapping("/all")
-    public ResponseEntity<?> getAllBills(HttpServletRequest request) {
+    @GetMapping("/all/user")
+    public ResponseEntity<?> getAllBillUser(HttpServletRequest request) {
         try{
             Users currentUser = getUserFromToken(request);
-            List<Bills> b;
-            switch (currentUser.getRole()) {
-                case 1: // admin
-                    b = billServices.findAll();
-                    break;
-
-                case 0: // normal user
-                    b = billServices.findAllByUserId(currentUser.getId());
-                    break;
-
-                case 2: // manager
-                    b = billServices.findAllByManagerId(currentUser.getId());
-                    break;
-
-                default: // manager or other roles
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                .body(Map.of("message", "User not found"));
+            if (currentUser.getRole() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "User not found"));
             }
+            List<Bills> b = billServices.findAllByUserId(currentUser.getId()); // billServices.findAll(); billServices.findAllByManagerId(currentUser.getId());
+            return ResponseEntity.ok(b);
+        }
+        catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Bill not found"));
+        }
+    }
+
+    // get all bills (for admin) (done)
+    @GetMapping("/all/admin")
+    public ResponseEntity<?> getAllBillAdmin(HttpServletRequest request) {
+        try{
+            Users currentUser = getUserFromToken(request);
+            if (currentUser.getRole() != 1) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Admin only"));
+            }
+            List<Bills> b = billServices.findAll(); 
+            return ResponseEntity.ok(b);
+        }
+        catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Bill not found"));
+        }
+    }
+
+    // get all bills for manager (done)
+    @GetMapping("/all/mng")
+    public ResponseEntity<?> getAllBillMana(HttpServletRequest request) {
+        try{
+            Users currentUser = getUserFromToken(request);
+            if (currentUser.getRole() != 2) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Manager only"));
+            }
+            List<Bills> b = billServices.findAllByManagerId(currentUser.getId()); 
             return ResponseEntity.ok(b);
         }
         catch (RuntimeException e) {

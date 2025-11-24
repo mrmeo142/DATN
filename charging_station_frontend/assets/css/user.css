@@ -1047,7 +1047,9 @@ body {
     border-radius: 5px;
   }
   .history-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1.5fr 2.8fr 1.5fr 1.2fr 1.2fr 0.5fr;
+    align-items: center;
     justify-content: space-between;
     padding: 10px;
     border-bottom: 1px solid #eee;

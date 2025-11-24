@@ -278,59 +278,175 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* ============================================================
    VEHICLE MODAL
    ============================================================ */
+// LẤY DANH SÁCH XE TỪ API /profile
+const API_BASE = "http://localhost:8080";
+async function loadVehicles() {
+    try {
+        const res = await fetch(`${API_BASE}/profile`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error("Lỗi lấy thông tin người dùng");
+
+        const userData = await res.json();
+        const vehicles = userData.vehicles || []; // giả sử backend trả về mảng vehicles
+
+        const tbody = document.getElementById("vehicleTableBody");
+        tbody.innerHTML = ""; // xóa dữ liệu cũ
+
+        vehicles.forEach(vehicle => {
+            const tr = document.createElement("tr");
+            tr.dataset.vehicleId = vehicle.id; // lưu ID để edit/delete
+            tr.innerHTML = `
+                <td>${vehicle.type}</td>
+                <td>${vehicle.identifier}</td>
+                <td>
+                    <button class="edit-btn">Edit</button>
+                    <button class="delete-btn">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Không tải được danh sách xe!");
+    }
+}
+
+// THÊM XE MỚI
+async function addVehicle(type, identifier) {
+    try {
+        const res = await fetch(`${API_BASE}/add/vehicles`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ type, identifier })
+        });
+        if (res.ok) {
+            alert("Thêm xe thành công!");
+            loadVehicles(); // reload danh sách
+        } else {
+            alert("Thêm xe thất bại!");
+        }
+    } catch (err) {
+        alert("Lỗi kết nối server");
+    }
+}
+
+// SỬA XE
+async function updateVehicle(vehicleId, type, identifier) {
+    try {
+        const res = await fetch(`${API_BASE}/update/vehicles/${vehicleId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ type, identifier })
+        });
+        if (res.ok) {
+            alert("Cập nhật thành công!");
+            loadVehicles();
+        } else {
+            alert("Cập nhật thất bại!");
+        }
+    } catch (err) {
+        alert("Lỗi kết nối server");
+    }
+}
+
+// XÓA XE
+async function deleteVehicle(vehicleId) {
+    if (!confirm("Xóa xe này?")) return;
+    try {
+        const res = await fetch(`${API_BASE}/delete/vehicles/${vehicleId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+            alert("Xóa thành công!");
+            loadVehicles();
+        } else {
+            alert("Xóa thất bại!");
+        }
+    } catch (err) {
+        alert("Lỗi kết nối server");
+    }
+}
+
 const vehicleModal = document.getElementById("vehicleModal");
 const addVehicleBtn = document.getElementById("addVehicleBtn");
 const cancelModalBtn = document.getElementById("cancelModalBtn");
 const saveVehicleBtn = document.getElementById("saveVehicleBtn");
 const vehicleType = document.getElementById("vehicleType");
-const licensePlate = document.getElementById("licensePlate");
+const licensePlateInput = document.getElementById("licensePlate");
 const modalTitle = document.getElementById("modalTitle");
 
-let editingRow = null;
+let editingVehicleId = null; // lưu ID xe đang sửa
 
+// MỞ MODAL THÊM MỚI
 addVehicleBtn.addEventListener("click", () => {
-  editingRow = null;
-  modalTitle.textContent = "Add Vehicle";
-  vehicleType.value = "EV Car";
-  licensePlate.value = "";
-  vehicleModal.style.display = "flex";
-});
-
-cancelModalBtn.addEventListener("click", () => {
-  vehicleModal.style.display = "none";
-});
-
-saveVehicleBtn.addEventListener("click", () => {
-  if (editingRow) {
-    editingRow.children[0].textContent = vehicleType.value;
-    editingRow.children[1].textContent = licensePlate.value;
-  } else {
-    const newRow = document.createElement("tr");
-    newRow.innerHTML = `
-      <td>${vehicleType.value}</td>
-      <td>${licensePlate.value}</td>
-      <td>
-        <button class="edit-btn">Edit</button>
-        <button class="delete-btn">Delete</button>
-      </td>`;
-    document.getElementById("vehicleTableBody").appendChild(newRow);
-  }
-  vehicleModal.style.display = "none";
-});
-
-document.getElementById("vehicleTableBody").addEventListener("click", (e) => {
-  const row = e.target.closest("tr");
-  if (e.target.classList.contains("edit-btn")) {
-    editingRow = row;
-    modalTitle.textContent = "Edit Vehicle";
-    vehicleType.value = row.children[0].textContent;
-    licensePlate.value = row.children[1].textContent;
+    editingVehicleId = null;
+    modalTitle.textContent = "Add Vehicle";
+    vehicleType.value = "EV Car";
+    licensePlateInput.value = "";
     vehicleModal.style.display = "flex";
-  }
-  if (e.target.classList.contains("delete-btn")) {
-    row.remove();
-  }
 });
+
+// ĐÓNG MODAL
+cancelModalBtn.addEventListener("click", () => {
+    vehicleModal.style.display = "none";
+});
+
+// LƯU (THÊM HOẶC SỬA)
+saveVehicleBtn.addEventListener("click", () => {
+    const type = vehicleType.value;
+    const identifier = licensePlateInput.value.trim();
+
+    if (!identifier) {
+        alert("Vui lòng nhập biển số xe!");
+        return;
+    }
+
+    if (editingVehicleId) {
+        updateVehicle(editingVehicleId, type, identifier);
+    } else {
+        addVehicle(type, identifier);
+    }
+    vehicleModal.style.display = "none";
+});
+
+// XỬ LÝ NÚT EDIT VÀ DELETE TRONG BẢNG
+document.getElementById("vehicleTableBody").addEventListener("click", (e) => {
+    const row = e.target.closest("tr");
+    if (!row || !row.dataset.vehicleId) return;
+
+    const vehicleId = row.dataset.vehicleId;
+
+    if (e.target.classList.contains("edit-btn")) {
+        editingVehicleId = vehicleId;
+        modalTitle.textContent = "Edit Vehicle";
+        vehicleType.value = row.children[0].textContent;
+        licensePlateInput.value = row.children[1].textContent;
+        vehicleModal.style.display = "flex";
+    }
+
+    if (e.target.classList.contains("delete-btn")) {
+        deleteVehicle(vehicleId);
+    }
+});
+
+// TẢI DANH SÁCH XE KHI VÀO TRANG PROFILE (HOẶC CHARGING)
+document.addEventListener("DOMContentLoaded", () => {
+    // Nếu bạn vào tab Profile hoặc Charging thì load xe
+    if (window.location.hash.includes("profile") || document.querySelector(".profile-page")?.style.display === "block") {
+        loadVehicles();
+    }
+});
+
+// GỌI LẠI KHI CHUYỂN SANG TAB PROFILE (nếu bạn dùng sidebar như trước)
+profileBtn?.addEventListener("click", loadVehicles);
 
 
 /* ========== REGISTRATION LOGIC ========== */
@@ -684,6 +800,7 @@ document.getElementById('submitPaymentBtn').onclick = async () => {
             localStorage.removeItem('billId');
             currentBillData = null;
             updateChargingUI();
+            alert('Thanh toán thành công!');
         } else {
             alert("Thanh toán thất bại. Vui lòng thử lại!");
         }
@@ -702,81 +819,314 @@ paymentBtn.onclick = async () => {
     if (latestBill) showBillModal(latestBill);
 };
 
-/* ========== wallet & history section ========== */
-const walletTab = document.getElementById('walletTab');
-  const historyTab = document.getElementById('historyTab');
-  const walletSection = document.querySelector('.wallet-section');
-  const historySection = document.querySelector('.history-section');
+/* ===================== WALLET & HISTORY – FULL API REAL ===================== */
 
-  walletTab.addEventListener('click', () => {
+const walletTab = document.getElementById('walletTab');
+const historyTab = document.getElementById('historyTab');
+const walletSection = document.querySelector('.wallet-section');
+const historySection = document.querySelector('.history-section');
+
+const bankSelect = document.getElementById('bankSelect');
+const bankForm = document.getElementById('bankForm');
+const accountNumber = document.getElementById('accountNumber');
+const accountName = document.getElementById('accountName');
+const connectBank = document.getElementById('connectBank');
+
+const selectedAccount = document.querySelector('.account-dropdown .selected');
+const optionsContainer = document.querySelector('.account-dropdown .options');
+
+const depositBtn = document.getElementById('deposit');
+const withdrawBtn = document.getElementById('withdraw');
+const amountForm = document.getElementById('amountForm');
+const amountInput = document.getElementById('amountInput');
+const finishBtn = document.getElementById('finishBtn');
+
+let currentUserBankAccounts = []; // lưu danh sách tài khoản đã liên kết
+
+// TẢI THÔNG TIN NGƯỜI DÙNG + BALANCE + FULLNAME
+async function loadUserProfile() {
+    try {
+        const res = await fetch(`${API_BASE}/profile`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        document.querySelector('.wallet-card h2').textContent = data.fullname || "User";
+        document.querySelector('.wallet-card p').textContent = `Balance: ${formatVND(data.balance || 0)}`;
+    } catch (err) {
+        console.error("Lỗi load profile");
+    }
+}
+
+// TẢI DANH SÁCH NGÂN HÀNG VÀO SELECT
+async function loadBanks() {
+    try {
+        const res = await fetch(`${API_BASE}/bank/all`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) throw new Error();
+        const banks = await res.json();
+
+        bankSelect.innerHTML = '<option value="">Select Bank</option>';
+        banks.forEach(bank => {
+            const opt = document.createElement('option');
+            opt.value = bank.id;
+            opt.textContent = bank.bankName;
+            bankSelect.appendChild(opt);
+        });
+    } catch (err) {
+        alert("Không tải được danh sách ngân hàng!");
+    }
+}
+
+// TẢI DANH SÁCH TÀI KHOẢN ĐÃ LIÊN KẾT
+async function loadLinkedAccounts() {
+    try {
+        const res = await fetch(`${API_BASE}/bankAccount/all`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) throw new Error();
+        currentUserBankAccounts = await res.json();
+
+        optionsContainer.innerHTML = "";
+        if (currentUserBankAccounts.length === 0) {
+            selectedAccount.textContent = "-- No Account Linked --";
+            return;
+        }
+
+        currentUserBankAccounts.forEach(acc => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerHTML = `
+                <span>${acc.bankName} - ${acc.accountNumber}</span>
+                <button class="accountdelete">Delete</button>
+            `;
+            div.dataset.accountId = acc.id;
+            optionsContainer.appendChild(div);
+        });
+        selectedAccount.textContent = "-- Choose Account --";
+    } catch (err) {
+        console.error("Lỗi load tài khoản liên kết");
+    }
+}
+
+// LIÊN KẾT TÀI KHOẢN NGÂN HÀNG
+connectBank.addEventListener('click', async () => {
+    const bankId = bankSelect.value;
+    const accNum = accountNumber.value.trim();
+    const accName = accountName.value.trim();
+
+    if (!bankId || !accNum || !accName) {
+        alert("Vui lòng điền đầy đủ thông tin!");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/bankAccount/create/${bankId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                accountNumber: accNum, 
+                accountHolderName: accName 
+            })
+        });
+
+        // ĐỌC BODY TRƯỚC KHI DÙNG res.json() HOẶC res.text()
+        const contentType = res.headers.get("content-type");
+        let responseData = null;
+        if (contentType && contentType.includes("application/json")) {
+            responseData = await res.json();
+        } else {
+            responseData = await res.text();
+        }
+
+        if (res.ok) {
+            // THÀNH CÔNG THẬT SỰ
+            alert("Liên kết tài khoản thành công!");
+            accountNumber.value = "";
+            accountName.value = "";
+            bankSelect.value = "";
+            bankForm.style.display = "none";
+
+            // BẮT BUỘC LOAD LẠI DANH SÁCH – ĐẢM BẢO HIỆN THỊ NGAY
+            await loadLinkedAccounts();
+        } else {
+            // LỖI TỪ SERVER (400, 409, 500...)
+            alert("Liên kết thất bại: " + (responseData.message || responseData || "Lỗi không xác định"));
+        }
+    } catch (err) {
+        console.error("Lỗi kết nối:", err);
+        alert("Lỗi kết nối server. Vui lòng kiểm tra mạng hoặc thử lại!");
+    }
+});
+
+// XÓA TÀI KHOẢN ĐÃ LIÊN KẾT
+optionsContainer.addEventListener('click', async (e) => {
+    if (e.target.classList.contains('accountdelete')) {
+        e.stopPropagation();
+        const option = e.target.closest('.option');
+        const accountId = option.dataset.accountId;
+        const accText = option.querySelector('span').textContent;
+
+        if (!confirm(`Xóa tài khoản "${accText}"?`)) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/bankAccount/delete/${accountId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                option.remove();
+                if (optionsContainer.children.length === 0) {
+                    selectedAccount.textContent = "-- No Account Linked --";
+                }
+                alert("Xóa thành công!");
+            }
+        } catch (err) {
+            alert("Xóa thất bại!");
+        }
+    }
+
+    // Chọn tài khoản
+    if (e.target.closest('.option') && !e.target.classList.contains('accountdelete')) {
+        const option = e.target.closest('.option');
+        selectedAccount.textContent = option.querySelector('span').textContent;
+        selectedAccount.dataset.accountId = option.dataset.accountId;
+        optionsContainer.style.display = 'none';
+    }
+});
+
+// GỌI DEPOSIT HOẶC WITHDRAW
+finishBtn.addEventListener('click', async () => {
+    const amount = parseInt(amountInput.value);
+    const accountId = selectedAccount.dataset.accountId;
+
+    if (!amount || amount <= 0) return alert("Vui lòng nhập số tiền hợp lệ!");
+    if (!accountId) return alert("Vui lòng chọn tài khoản!");
+
+    const isDeposit = depositBtn.classList.contains('active');
+    const endpoint = isDeposit ? 'deposit' : 'withdraw';
+
+    try {
+        const res = await fetch(`${API_BASE}/bills/${accountId}/${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ amount })
+        });
+
+        if (res.ok) {
+            alert(`${isDeposit ? "Nạp" : "Rút"} tiền thành công ${formatVND(amount)}!`);
+            amountInput.value = "";
+            amountForm.style.display = "none";
+            loadUserProfile(); // cập nhật balance
+            if (historyTab.classList.contains('active')) {
+                loadHistoryBills(); // nếu đang ở tab History thì reload
+            }
+        } else {
+            alert(`${isDeposit ? "Nạp" : "Rút"} tiền thất bại!`);
+        }
+    } catch (err) {
+        alert("Lỗi kết nối server");
+    }
+});
+console.log(token);
+// TẢI LỊCH SỬ GIAO DỊCH
+async function loadHistoryBills() {
+    try {
+        const res = await fetch(`${API_BASE}/bills/all/user`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) throw new Error();
+        const bills = await res.json();
+
+        const container = document.querySelector('.history-list');
+        container.innerHTML = "";
+
+        if (bills.length === 0) {
+            container.innerHTML = "<p>Chưa có giao dịch nào</p>";
+            return;
+        }
+
+        bills.forEach(bill => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `
+                <span>${bill.userName || bill.cardHolderName|| "Bạn"}</span>
+                <span>${bill.id}</span>
+                <span>${bill.description}</span>
+                <span>${formatVND(bill.amount)}</span>
+                <span>${new Date(bill.paidAt).toLocaleDateString('vi-VN')}</span>
+                <span id="billdetail"><i class="fa-solid fa-eye"></i><span>
+            `;
+            container.appendChild(div);
+        });
+    } catch (err) {
+        document.querySelector('.history-list').innerHTML = "<p>Lỗi tải lịch sử</p>";
+    }
+}
+
+// ĐỊNH DẠNG TIỀN VIỆT NAM
+function formatVND(amount) {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+}
+
+// CHUYỂN TAB
+walletTab.addEventListener('click', () => {
     walletTab.classList.add('active');
     historyTab.classList.remove('active');
     walletSection.classList.add('active');
     historySection.classList.remove('active');
-  });
+    loadUserProfile();
+    loadLinkedAccounts();
+});
 
-  historyTab.addEventListener('click', () => {
+historyTab.addEventListener('click', () => {
     historyTab.classList.add('active');
     walletTab.classList.remove('active');
     historySection.classList.add('active');
     walletSection.classList.remove('active');
-  });
+    loadHistoryBills();
+});
 
-  // Bank select
-  const bankSelect = document.getElementById('bankSelect');
-  const bankForm = document.getElementById('bankForm');
-  bankSelect.addEventListener('change', () => {
+// HIỂN THỊ FORM NGÂN HÀNG KHI CHỌN
+bankSelect.addEventListener('change', () => {
     bankForm.style.display = bankSelect.value ? 'block' : 'none';
-  });
+});
 
-  // Custom account dropdown
-  const dropdown = document.querySelector('.account-dropdown');
-  const selected = dropdown.querySelector('.selected');
-  const optionsContainer = dropdown.querySelector('.options');
-
-  selected.addEventListener('click', () => {
-    optionsContainer.style.display = optionsContainer.style.display === 'block' ? 'none' : 'block';
-  });
-
-  optionsContainer.querySelectorAll('.option').forEach(option => {
-    option.addEventListener('click', (e) => {
-      if(e.target.classList.contains('accountdelete-btn')) return;
-      selected.textContent = option.firstChild.textContent.trim();
-      optionsContainer.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
-      option.classList.add('selected');
-      optionsContainer.style.display = 'none';
-    });
-
-    const deleteBtn = option.querySelector('.accountdelete');
-    deleteBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const accountName = option.firstChild.textContent.trim();
-      if(confirm(`Delete account "${accountName}"?`)) {
-        option.remove();
-        if(selected.textContent === accountName) {
-          selected.textContent = "-- Choose Account --";
-        }
-      }
-    });
-  });
-
-  document.addEventListener('click', (e) => {
-    if(!dropdown.contains(e.target)) {
-      optionsContainer.style.display = 'none';
-    }
-  });
-
-  // Transaction method
-  const deposit = document.getElementById('deposit');
-  const withdraw = document.getElementById('withdraw');
-  const amountForm = document.getElementById('amountForm');
-
-  [deposit, withdraw].forEach(btn => {
+// HIỂN THỊ FORM NHẬP TIỀN KHI CHỌN DEPOSIT/WITHDRAW
+[depositBtn, withdrawBtn].forEach(btn => {
     btn.addEventListener('click', () => {
-      deposit.classList.remove('active');
-      withdraw.classList.remove('active');
-      btn.classList.add('active');
-      amountForm.style.display = 'block';
+        depositBtn.classList.toggle('active', btn === depositBtn);
+        withdrawBtn.classList.toggle('active', btn === withdrawBtn);
+        amountForm.style.display = 'block';
     });
-  });
+});
+
+// ĐÓNG DROPDOWN KHI CLICK NGOÀI
+document.addEventListener('click', (e) => {
+    if (!document.querySelector('.account-dropdown').contains(e.target)) {
+        optionsContainer.style.display = 'none';
+    }
+});
+
+// MỞ DROPDOWN
+selectedAccount.addEventListener('click', () => {
+    optionsContainer.style.display = optionsContainer.style.display === 'block' ? 'none' : 'block';
+});
+
+// TẢI DỮ LIỆU KHI VÀO TAB WALLET LẦN ĐẦU
+document.addEventListener("DOMContentLoaded", () => {
+    if (walletTab.classList.contains('active')) {
+        loadUserProfile();
+        loadBanks();
+        loadLinkedAccounts();
+    }
+});
+
+// KHI CHUYỂN SANG TAB WALLET TỪ SIDEBAR
+walletBtn?.addEventListener("click", () => {
+    setTimeout(() => {
+        loadUserProfile();
+        loadBanks();
+        loadLinkedAccounts();
+    }, 100);
+});
 //localStorage.clear();

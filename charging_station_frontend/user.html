@@ -275,89 +275,89 @@
     <section class="wallet-page">
       <div class="wallet-container">
         <div class="wallet-actions">
-    <div id="walletTab" class="active">My Wallet</div>
-    <div id="historyTab">History Bills</div>
-  </div>
+            <div id="walletTab" class="active">My Wallet</div>
+            <div id="historyTab">History Bills</div>
+          </div>
 
-  <!-- Content chính gói trong 1 div -->
-  <div class="wallet-content">
+          <!-- Content chính gói trong 1 div -->
+          <div class="wallet-content">
+            <!-- My Wallet -->
+            <div class="wallet-section active">
+              <!-- Bên trái -->
+              <div class="wallet-left">
+                <div class="wallet-card">
+                  <h2>John Doe</h2>
+                  <p>Balance: $1,500</p>
+                </div>
 
-    <!-- My Wallet -->
-    <div class="wallet-section active">
+                <div class="bank-selection">
+                  <label>Connect a bank account:</label>
+                  <select id="bankSelect">
+                    <option value="">Select Bank</option>
+                    <option value="Bank A">Bank A</option>
+                    <option value="Bank B">Bank B</option>
+                    <option value="Bank C">Bank C</option>
+                  </select>
+                </div>
 
-      <!-- Bên trái -->
-      <div class="wallet-left">
-        <div class="wallet-card">
-          <h2>John Doe</h2>
-          <p>Balance: $1,500</p>
-        </div>
+                <div class="bank-form" id="bankForm">
+                  <input class="account" type="text" placeholder="Account Number" id="accountNumber">
+                  <input class="account" type="text" placeholder="Account Name" id="accountName">
+                  <button class="submitwallet" id="connectBank">Connect</button>
+                </div>
+              </div>
 
-        <div class="bank-selection">
-          <label>Connect a bank account:</label>
-          <select id="bankSelect">
-            <option value="">Select Bank</option>
-            <option value="Bank A">Bank A</option>
-            <option value="Bank B">Bank B</option>
-            <option value="Bank C">Bank C</option>
-          </select>
-        </div>
+              <!-- Bên phải -->
+              <div class="wallet-right">
+                <h3>Select Account</h3>
+                <div class="account-dropdown">
+                  <div class="selected">-- Choose Account --</div>
+                  <div class="options">
+                    <div class="option">Main Account <button class="accountdelete">Delete</button></div>
+                    <div class="option">Savings Account <button class="accountdelete">Delete</button></div>
+                    <div class="option">Business Account <button class="accountdelete">Delete</button></div>
+                  </div>
+                </div>
 
-        <div class="bank-form" id="bankForm">
-          <input class="account" type="text" placeholder="Account Number" id="accountNumber">
-          <input class="account" type="text" placeholder="Account Name" id="accountName">
-          <button class="submitwallet" id="connectBank">Connect</button>
-        </div>
-      </div>
+                <h3>Transaction Method</h3>
+                <div class="method-selection">
+                  <div id="deposit">Deposit</div>
+                  <div id="withdraw">Withdraw</div>
+                </div>
 
-      <!-- Bên phải -->
-      <div class="wallet-right">
-        <h3>Select Account</h3>
-        <div class="account-dropdown">
-          <div class="selected">-- Choose Account --</div>
-          <div class="options">
-            <div class="option">Main Account <button class="accountdelete">Delete</button></div>
-            <div class="option">Savings Account <button class="accountdelete">Delete</button></div>
-            <div class="option">Business Account <button class="accountdelete">Delete</button></div>
+                <div class="amount-form" id="amountForm">
+                  <input class="amount account" type="number" placeholder="Enter amount" id="amountInput">
+                  <button class="submitwallet" id="finishBtn">Finished</button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- History Bills -->
+            <div class="history-section">
+              <h3>Payment History</h3>
+              <div class="history-list">
+                <div class="history-item">
+                  <span>John Doe</span>
+                  <span>123456</span>
+                  <span>Deposit</span>
+                  <span>$500</span>
+                  <span>2025-11-10</span>
+                  <span id="billdetail"><i class="fa-solid fa-eye"></i><span></span>
+                </div>
+                <div class="history-item">
+                  <span>John Doe</span>
+                  <span>123456</span>
+                  <span>Withdraw</span>
+                  <span>$200</span>
+                  <span>2025-11-08</span>
+                  <span id="billdetail"><i class="fa-solid fa-eye"></i><span></span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
-
-        <h3>Transaction Method</h3>
-        <div class="method-selection">
-          <div id="deposit">Deposit</div>
-          <div id="withdraw">Withdraw</div>
-        </div>
-
-        <div class="amount-form" id="amountForm">
-          <input class="amount account" type="number" placeholder="Enter amount" id="amountInput">
-          <button class="submitwallet" id="finishBtn">Finished</button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- History Bills -->
-    <div class="history-section">
-      <h3>Payment History</h3>
-      <div class="history-list">
-        <div class="history-item">
-          <span>John Doe</span>
-          <span>123456</span>
-          <span>Deposit</span>
-          <span>$500</span>
-          <span>2025-11-10</span>
-        </div>
-        <div class="history-item">
-          <span>John Doe</span>
-          <span>123456</span>
-          <span>Withdraw</span>
-          <span>$200</span>
-          <span>2025-11-08</span>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
       </div>
     </section>
 
