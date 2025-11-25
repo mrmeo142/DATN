@@ -101,18 +101,18 @@
 <div id="billModal" class="bill" style="display: none;">
   <div class="bill-content">
     <div class="bill-header">
-      <h2 class="bill-describe">HÓA ĐƠN SẠC ĐIỆN</h2>
+      <h2 class="bill-describe">ELECTRICITY BILL</h2>
     </div>
     <div class="bill-body">
       <div class="bill-info">
-        <p><strong>Khách hàng:</strong> <span id="billUserName">Loading...</span></p>
-        <p><strong>Mô tả:</strong> <span id="billDescription">Electricity Bill</span></p>
-        <p><strong>Mã trạm sạc:</strong> <span id="billChargerId">-</span></p>
-        <p><strong>Biển số xe:</strong> <span id="billVehicle">-</span></p>
-        <p><strong>Tổng thời gian sạc:</strong> <span id="billTotalTime">0 phút</span></p>
-        <p><strong>Chi tiết thời gian sạc:</strong></p>
+        <p><strong>User:</strong> <span id="billUserName">Loading...</span></p>
+        <p><strong>Description:</strong> <span id="billDescription">Electricity Bill</span></p>
+        <p><strong>Charger:</strong> <span id="billChargerId">-</span></p>
+        <p><strong>Plate:</strong> <span id="billVehicle">-</span></p>
+        <p><strong>Total time:</strong> <span id="billTotalTime">0 phút</span></p>
+        <p><strong>Time list:</strong></p>
         <ul id="billTimeList"></ul>
-        <p><strong>Tổng tiền:</strong> <span id="billAmount">0 VND</span> </p>
+        <p><strong>Amount:</strong> <span id="billAmount">0 VND</span> </p>
       </div>
     </div>
     <div class="bill-footer">
@@ -216,37 +216,26 @@
               <label>Full Name</label>
               <input type="text" placeholder="Enter full name">
             </div>
-
             <div class="form-group">
               <label>Email</label>
               <input type="email" placeholder="Enter email">
             </div>
-
-            <div class="form-group">
-              <label>Password</label>
-              <input type="password" placeholder="Enter password">
-            </div>
-
             <div class="form-group">
               <label>Identification (CCCD/CMND)</label>
               <input type="text" placeholder="Enter ID number">
             </div>
-
             <div class="form-group">
               <label>Phone</label>
               <input type="text" placeholder="Enter phone number">
             </div>
-
             <div class="form-group">
               <label>Birthday</label>
               <input type="date">
             </div>
-
             <div class="form-group">
               <label>Address</label>
               <input type="text" placeholder="Enter address">
             </div>
-
             <button type="submit" class="save-btn" id="registration-form">Register</button>
             <div id="registrationStatus" class="registration-status pending" style="display:none;">Pending</div>
           </form>
@@ -354,8 +343,17 @@
                   <span id="billdetail"><i class="fa-solid fa-eye"></i><span></span>
                 </div>
               </div>
+              <!-- POPUP CHI TIẾT GIAO DỊCH -->
+              <div id="billDetailOverlay" class="bill-detail-overlay" style="display: none;">
+                <div class="bill-detail-modal">
+                  <div class="bill-detail-header">
+                    <h2>Payment Detail</h2>
+                  </div>
+                  <div class="bill-detail-body" id="billDetailContent">
+                  </div>
+                </div>
+              </div>
             </div>
-
           </div>
         </div>
       </div>

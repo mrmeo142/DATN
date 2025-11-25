@@ -23,6 +23,7 @@ public class Users {
     private String identification;
     private String phone;
     private Boolean authorization;
+    private String address;
     private LocalDate birthday;
     private Integer role = 0 ; // 0: user, 1: admin, 2: manager
     private ArrayList<Vehicles> vehicles = new ArrayList<>();

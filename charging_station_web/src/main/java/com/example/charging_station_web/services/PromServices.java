@@ -26,6 +26,11 @@ public class PromServices {
             .orElseThrow(() -> new RuntimeException("Registration not found"));
     }
 
+    // get promotion by userId
+    public Promotion getPromByUserId(String userId){
+        return promRepositories.findByUserId(userId);
+    }
+
     // get all promotions
     public List<Promotion> findAll(){
         return promRepositories.findAll();

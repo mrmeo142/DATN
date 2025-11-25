@@ -6,10 +6,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Document(collection = "Promotions")
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class Promotion {
     @Id
     private String id;

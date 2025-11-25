@@ -22,7 +22,7 @@ function handleLogout() {
 
 // Lấy token từ localStorage
 const token = localStorage.getItem('jwtToken');
-
+const API_BASE = "http://localhost:8080";
 if (!token || isTokenExpired(token)) {
     handleLogout(); // token hết hạn → logout
 } else {
@@ -206,7 +206,9 @@ walletBtn.addEventListener("click", () => {
   walletBtn.classList.add("active");
 });
 
-
+/* ============================================================
+   Cập nhật thông tin người dùng
+   ============================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('jwtToken');
     const personalForm = document.getElementById('personalForm');
@@ -219,7 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ===== Load profile data từ server =====
     try {
-        const res = await fetch('http://localhost:8080/profile', {
+        const res = await fetch(`${API_BASE}/profile`, {
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token }
         });
@@ -231,7 +233,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Điền thông tin vào form
         personalForm.fullName.value = user.fullname || '';
         personalForm.email.value = user.email || '';
-        personalForm.password.value = '**********';
+        personalForm.password.value = '';
+        personalForm.password.placeholder = '••••••••••';
         personalForm.phone.value = user.phone || '';
         personalForm.birthday.value = user.birthday || '';
 
@@ -253,7 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         try {
-            const res = await fetch('http://localhost:8080/update', {
+            const res = await fetch(`${API_BASE}/update`, {
                 method: 'PUT', // hoặc POST tùy API
                 headers: {
                     'Content-Type': 'application/json',
@@ -279,7 +282,6 @@ document.addEventListener('DOMContentLoaded', async () => {
    VEHICLE MODAL
    ============================================================ */
 // LẤY DANH SÁCH XE TỪ API /profile
-const API_BASE = "http://localhost:8080";
 async function loadVehicles() {
     try {
         const res = await fetch(`${API_BASE}/profile`, {
@@ -450,20 +452,162 @@ profileBtn?.addEventListener("click", loadVehicles);
 
 
 /* ========== REGISTRATION LOGIC ========== */
+/* ===================== REGISTRATION PAGE – FULL API REAL ===================== */
+const registrationForm = document.querySelector('.registration-form');
 const registerBtn = document.getElementById("registration-form");
 const statusEl = document.getElementById("registrationStatus");
 
-registerBtn.addEventListener("click", function(e) {
-  e.preventDefault();
-  registerBtn.style.display = "none";
-  setRegistrationStatus("pending");
+// Các input để dễ lấy giá trị
+const inputs = {
+    fullName: registrationForm.querySelector('input[placeholder="Enter full name"]'),
+    email: registrationForm.querySelector('input[type="email"]'),
+    idNumber: registrationForm.querySelector('input[placeholder="Enter ID number"]'),
+    phone: registrationForm.querySelector('input[placeholder="Enter phone number"]'),
+    birthday: registrationForm.querySelector('input[type="date"]'),
+    address: registrationForm.querySelector('input[placeholder="Enter address"]')
+};
+
+let currentPromoteId = null; // Lưu ID yêu cầu đăng ký (nếu có)
+
+/* ===== 1. TẢI THÔNG TIN NGƯỜI DÙNG + TRẠNG THÁI ĐĂNG KÝ ===== */
+async function loadRegistrationData() {
+    try {
+        const res = await fetch(`${API_BASE}/profile`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error();
+        const user = await res.json();
+        console.log(user);
+
+        // Điền thông tin vào form (chỉ điền nếu có dữ liệu)
+        inputs.fullName.value = user.fullname || '';
+        inputs.email.value = user.email || '';
+        inputs.idNumber.value = user.identification || '';
+        inputs.phone.value = user.phone || '';
+        inputs.birthday.value = user.birthday || '';
+        inputs.address.value = user.address || '';
+
+        // Kiểm tra xem user đã từng gửi yêu cầu đăng ký chưa
+        if (user.identification && user.address) {
+            checkPromoteStatus();
+        } else {
+            // Chưa gửi → hiện nút Register bình thường
+            showRegisterButton();
+        }
+
+    } catch (err) {
+        console.error("Lỗi tải thông tin:", err);
+        alert("Không tải được thông tin cá nhân!");
+    }
+}
+
+/* ===== 2. KIỂM TRA TRẠNG THÁI YÊU CẦU ĐĂNG KÝ ===== */
+async function checkPromoteStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/promote/user`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) throw new Error();
+
+        const promote = await res.json();
+        const status = promote.status?.toLowerCase(); // "pending", "approved", "rejected"
+
+        if (status === "approved") {
+            setRegistrationStatus("approved");
+            registerBtn.style.display = "none";
+        } else if (status === "pending") {
+            setRegistrationStatus("pending");
+            registerBtn.style.display = "none";
+        } else {
+            showRegisterButton(); // rejected hoặc lỗi → cho gửi lại
+        }
+
+    } catch (err) {
+        console.error("Lỗi kiểm tra trạng thái:", err);
+        showRegisterButton(); // nếu lỗi → cho gửi lại
+    }
+}
+
+/* ===== 3. HIỆN NÚT REGISTER ===== */
+function showRegisterButton() {
+    registerBtn.style.display = "block";
+    registerBtn.textContent = "Register";
+    statusEl.style.display = "none";
+}
+
+/* ===== 4. HIỂN THỊ TRẠNG THÁI ===== */
+function setRegistrationStatus(status) {
+    statusEl.style.display = "inline-block";
+    statusEl.className = "registration-status " + status;
+    statusEl.textContent = status === "approved" ? "Approved" : "Pending";
+    registerBtn.style.display = "none";
+}
+
+/* ===== 5. XỬ LÝ KHI NHẤN REGISTER ===== */
+registerBtn.addEventListener("click", async function(e) {
+    e.preventDefault();
+
+    // Kiểm tra các trường bắt buộc
+    if (!inputs.fullName.value || !inputs.email.value || !inputs.idNumber.value || !inputs.phone.value || !inputs.address.value) {
+        alert("Vui lòng điền đầy đủ Họ tên, Email, CCCD, địa chỉ và Số điện thoại!");
+        return;
+    }
+
+    const promoteData = {
+        fullName: inputs.fullName.value.trim(),
+        email: inputs.email.value.trim(),
+        identification: inputs.idNumber.value.trim(),
+        phone: inputs.phone.value.trim(),
+        birthday: inputs.birthday.value || null,
+        address: inputs.address.value.trim() || null
+    };
+
+    try {
+        registerBtn.textContent = "Đang gửi...";
+        registerBtn.disabled = true;
+
+        const res = await fetch(`${API_BASE}/promote/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(promoteData)
+        });
+
+        if (res.ok) {
+            const result = await res.json();
+            currentPromoteId = result.promoteId || result.id;
+
+            setRegistrationStatus("pending");
+            alert("Gửi yêu cầu đăng ký thành công! Vui lòng chờ quản trị viên duyệt.");
+        } else {
+            const msg = await res.text();
+            alert("Gửi yêu cầu thất bại: " + msg);
+            registerBtn.textContent = "Register";
+            registerBtn.disabled = false;
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Lỗi kết nối server!");
+        registerBtn.textContent = "Register";
+        registerBtn.disabled = false;
+    }
 });
 
-function setRegistrationStatus(status) {
-  statusEl.style.display = "inline-block";
-  statusEl.className = "registration-status " + status;
-  statusEl.textContent = status === "approved" ? "Approved" : "Pending";
-}
+/* ===== TỰ ĐỘNG TẢI KHI VÀO TRANG REGISTRATION ===== */
+document.addEventListener("DOMContentLoaded", () => {
+    const isRegistrationPage = document.querySelector('.registration-page')?.style.display !== "none";
+    if (isRegistrationPage || window.location.hash.includes("registration")) {
+        loadRegistrationData();
+    }
+});
+
+// Khi chuyển sang tab Registration từ sidebar
+registrationBtn?.addEventListener("click", () => {
+    setTimeout(loadRegistrationData, 100);
+});
 
 
 /* ========== AUTHENTICATION LOGIC ========== */
@@ -1033,7 +1177,9 @@ console.log(token);
 // TẢI LỊCH SỬ GIAO DỊCH
 async function loadHistoryBills() {
     try {
-        const res = await fetch(`${API_BASE}/bills/all/user`, { headers: { 'Authorization': 'Bearer ' + token } });
+        const res = await fetch(`${API_BASE}/bills/all/user`, { 
+            headers: { 'Authorization': 'Bearer ' + token } 
+        });
         if (!res.ok) throw new Error();
         const bills = await res.json();
 
@@ -1041,29 +1187,118 @@ async function loadHistoryBills() {
         container.innerHTML = "";
 
         if (bills.length === 0) {
-            container.innerHTML = "<p>Chưa có giao dịch nào</p>";
+            container.innerHTML = "<p style='text-align:center; color:#999;'>Chưa có giao dịch nào</p>";
             return;
         }
 
         bills.forEach(bill => {
             const div = document.createElement('div');
             div.className = 'history-item';
+            div.dataset.billId = bill.id; // lưu ID để click xem chi tiết
+            div.dataset.billType = bill.billType; // lưu loại bill
+            const typeText = bill.billType === 'ELECTRIC' ? 'Sạc điện' : 'Ngân hàng';
+            const color = bill.billType === 'ELECTRIC' ? '#2e7d32' : '#d32f2f';
+
             div.innerHTML = `
-                <span>${bill.userName || bill.cardHolderName|| "Bạn"}</span>
+                <span>${bill.userName || bill.cardHolderName || "Bạn"}</span>
                 <span>${bill.id}</span>
                 <span>${bill.description}</span>
                 <span>${formatVND(bill.amount)}</span>
                 <span>${new Date(bill.paidAt).toLocaleDateString('vi-VN')}</span>
-                <span id="billdetail"><i class="fa-solid fa-eye"></i><span>
+                <span id="billdetail"><i class="fa-solid fa-eye"></i></span>
             `;
             container.appendChild(div);
         });
+
+        // LẮNG NGHE CLICK VÀO MẮT XEM CHI TIẾT
+        container.addEventListener('click', async (e) => {
+            const eye = e.target.closest('#billdetail');
+            if (!eye) return;
+
+            const billItem = eye.closest('.history-item');
+            const billId = billItem.dataset.billId;
+            const billType = billItem.dataset.billType;
+            console.log(billId);
+            console.log(billType);
+            await showBillDetail(billId, billType);
+        });
+
     } catch (err) {
-        document.querySelector('.history-list').innerHTML = "<p>Lỗi tải lịch sử</p>";
+        console.error(err);
+        document.querySelector('.history-list').innerHTML = "<p style='color:red;'>Lỗi tải lịch sử giao dịch</p>";
     }
 }
 
-// ĐỊNH DẠNG TIỀN VIỆT NAM
+// ĐỊNH DẠNG THỜI GIAN SẠC: 
+function formatChargingTime(hours) {
+    if (!hours || hours <= 0) return "0 giây";
+
+    // Chuyển giờ thập phân → giây
+    const totalSeconds = Math.round(hours * 3600);
+
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+
+    const parts = [];
+    if (h > 0) parts.push(`${h}<small>h</small>`);
+    if (m > 0 || h > 0) parts.push(`${m}<small>m</small>`); // luôn hiện phút nếu có giờ
+    parts.push(`${s}<small>s</small>`);
+
+    return parts.join(' ');
+}
+
+// HÀM HIỆN CHI TIẾT BILL
+async function showBillDetail(billId, billType) {
+    try {
+        const res = await fetch(`${API_BASE}/bills/${billId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error();
+        const bill = await res.json();
+
+        let html = '';
+
+        if (billType === 'ElECTRIC') {
+            html = `
+                <div class="bill-detail-item"><strong>Description:</strong> <span>${bill.description || "Hóa đơn sạc"}</span></div>    
+                <div class="bill-detail-item"><strong>User:</strong> <span>${bill.userName || "Không rõ"}</span></div>
+                <div class="bill-detail-item"><strong>Chargers:</strong> <span>${bill.chargerId || "-"}</span></div>
+                <div class="bill-detail-item"><strong>Thời gian sạc:</strong> <span>${formatChargingTime(bill.totalTime)}</span></div>
+                <div class="bill-detail-item"><strong>Paid At:</strong> <span>${new Date(bill.paidAt).toLocaleString('vi-VN')}</span></div>
+                <div class="bill-detail-item"><strong style="font-size:1.4em; color:#d32f2f;">Amount:</strong> 
+                  <span style="font-size:1.4em; font-weight:bold; color:#d32f2f;">${formatVND(bill.amount)}</span>
+                </div>
+            `;
+        } else if (billType === 'BANK') {
+            html = `
+                <div class="bill-detail-item"><strong>Description:</strong> <span>${bill.description || "Giao dịch ngân hàng"}</span></div>    
+                <div class="bill-detail-item"><strong>Bank:</strong> <span>${bill.bankName || "Không rõ"}</span></div>
+                <div class="bill-detail-item"><strong>Card Holder:</strong> <span>${bill.cardHolderName || "Không rõ"}</span></div>
+                <div class="bill-detail-item"><strong>Card Number:</strong> <span>${bill.cardNumber||"Không rõ"}</span></div>
+                <div class="bill-detail-item"><strong>Paid At:</strong> <span>${new Date(bill.paidAt).toLocaleString('vi-VN')}</span></div>
+                <div class="bill-detail-item"><strong style="font-size:1.4em; color:#2e7d32;">Amount:</strong> 
+                  <span style="font-size:1.4em; font-weight:bold; color:#2e7d32;">${formatVND(bill.amount)}</span>
+                </div>
+            `;
+        }
+
+        document.getElementById('billDetailContent').innerHTML = html;
+        document.getElementById('billDetailOverlay').style.display = 'flex';
+
+    } catch (err) {
+        alert("Không thể tải chi tiết giao dịch!");
+    }
+}
+
+// ĐÓNG POPUP KHI CLICK NGOÀI HOẶC NÚT X
+document.getElementById('billDetailOverlay')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('billDetailOverlay')) {
+        document.getElementById('billDetailOverlay').style.display = 'none';
+    }
+});
+
+// ĐỊNH DẠNG TIỀN 
 function formatVND(amount) {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }

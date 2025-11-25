@@ -50,17 +50,26 @@ public class PromControllers {
 
     // create promo by user (done)
     @PostMapping("/create")
-    public ResponseEntity<?> createPromo(HttpServletRequest request,@RequestBody Promotion prom) {
+    public ResponseEntity<?> createPromo(HttpServletRequest request,@RequestBody Users user) {
         try{
             Users currentUser = getUserFromToken(request);
             if (currentUser == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "User not found"));
             }
+            if (currentUser.getRole() == 2) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "User have already registered"));
+            }
+
+            Promotion prom = new Promotion();
             String id = currentUser.getId();
+            currentUser.setIdentification(user.getIdentification());
+            currentUser.setAddress(user.getAddress());
             prom.setUserId(id);
             prom.setStartDate(LocalDate.now());
             prom.setStatus("Pending");
+            userServieces.saveUsers(currentUser);
             Promotion p =  promServices.savePromotion(prom);
             return ResponseEntity.ok(p);
         }
@@ -104,11 +113,29 @@ public class PromControllers {
     public ResponseEntity<?> getPromoById(@PathVariable String promId, HttpServletRequest request) {
         try{
             Users admin = getUserFromToken(request);
-            if(admin.getRole() != 1){
+            if(admin.getRole() != 2 && admin.getRole() != 1){
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Access denied: Admin only"));
+                    .body(Map.of("message", "Only admin or nanager"));
             }
             Promotion p = promServices.getPromById(promId);
+            return ResponseEntity.ok(p);
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Not found registration form"));
+        } 
+    }
+
+    // get promotion by userId ()
+    @GetMapping("/user")
+    public ResponseEntity<?> getPromoByUserId(HttpServletRequest request) {
+        try{
+            Users admin = getUserFromToken(request);
+            if(admin == null){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not found"));
+            }
+            Promotion p = promServices.getPromByUserId(admin.getId());
             return ResponseEntity.ok(p);
         }
         catch (Exception e) {
