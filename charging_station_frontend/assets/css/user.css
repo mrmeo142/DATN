@@ -487,6 +487,12 @@ body {
   box-shadow: 0 3px 8px rgba(0,0,0,0.08);
 }
 
+#realtimeChart {
+  width: 100% !important;
+  height: 300px !important;
+  border-radius: 16px;
+}
+
 /* --- 3. Sidebar Phải --- */
 .sidebar-right {
   background-color: white;
@@ -803,91 +809,6 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
-/* ==================== Authentication Page ========================*/
-
-.authentication-page {
-  display: none;
-  grid-column: span 2;
-  border-radius: 12px;
-  background: white;
-  padding: 25px;
-  color: black;
-  min-height: 550px;
-}
-
-.auth-container {
-  width: 50%;
-  margin: 40px auto;
-  background: #fff;
-  padding: 25px;
-  border-radius: 12px;
-  border: 1px solid #ccc;
-}
-
-.auth-container h2 {
-  margin-bottom: 20px;
-  font-size: 24px;
-  text-align: center;
-}
-
-.auth-container form label {
-  display: block;
-  margin-top: 15px;
-  font-weight: 600;
-}
-
-.auth-container input[type="file"] {
-  margin-top: 8px;
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid #aaa;
-}
-
-.verify-btn {
-  margin-top: 20px;
-  padding: 10px 18px;
-  background: #007bff;
-  border-radius: 8px;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.verify-btn:hover {
-  background: #005fcc;
-}
-
-.auth-status {
-  margin-top: 20px;
-  padding: 10px 18px;
-  display: inline-block;
-  background: #4CAF50;
-  color: white;
-  border-radius: 6px;
-  font-weight: bold;
-}
-
-/* .avatar-preview {
-  max-width: 200px;
-  object-fit: cover;
-  margin-top: 10px;
-  display: none;
-} */
-
-.img-preview-container {
-    justify-content: center; 
-    margin: 10px 0;
-    display: flex;
-  }
-
- .img-preview-container img {
-    max-width: 200px;
-    object-fit: cover;
-    margin-top: 10px;
-    display: none;
-  }
 
 /*======================= Wallet Page ===========================*/
 .wallet-page {

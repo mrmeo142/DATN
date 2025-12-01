@@ -1,0 +1,1091 @@
+:root {
+  --bg-dark-main: #0D0D0D;
+  --bg-dark-panel: #161616;
+  --bg-dark-card: #222222;
+  --text-primary: #FFFFFF;
+  --text-secondary: #AAAAAA;
+  --primary-green: hsl(86, 54%, 51%);
+  --border-color: #333333;
+   --white: hsl(0, 0%, 100%);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+code {
+  font-family: inherit !important;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: hsl(0deg 0% 70%);
+  color: var(--text-primary);
+  height: 100%;
+}
+/* --- Header --- */
+#header {
+  position: fixed;
+  z-index: 999; /* luôn nằm trên các phần khác */
+}
+
+/* --- Bố cục Dashboard (CSS Grid) --- */
+.dashboard-container {
+  display: grid;
+  grid-template-columns: 15% 85%; /* 2 cột: Trái, Phải */
+  min-height: 550px;
+  max-width: 100%;
+  margin: 0 auto;
+  margin-top: 105px;
+  background-color: #ffffffeb;
+}
+
+/* --- 1. Sidebar Trái --- */
+.sidebar-left {
+  background-color: #00000012;
+  height: 100%;
+}
+
+.sidebar-left nav ul {
+  list-style: none;
+  margin-top: 10px;
+}
+
+.sidebar-left nav li {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  color: black;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sidebar-left nav li i {
+  width: 20px;
+  text-align: center;
+}
+
+.sidebar-left nav li:hover {
+  color: black;
+  background-color: #00000024;
+  border-radius: 12px;
+  margin: 5px;
+}
+
+.sidebar-left nav li.active {
+  color: black;
+  background-color: #00000024;
+  border-radius: 12px;
+  font-weight: 600;
+  margin: 5px;
+}
+
+/* --- 2. Nội dung chính --- */
+.main-content {
+  background-color: #ffffff00;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+/* Đảm bảo tất cả page đều flex khi hiển thị */
+.main-content,
+.user-page,
+.manager-page,
+.charger-page,
+.promotion-page {
+  display: none;                    /* Ẩn mặc định */
+  flex-direction: column;
+  height: 100%;
+}
+
+.main-content.active,
+.user-page.active,
+.manager-page.active,
+.charger-page.active,
+.promotion-page.active,
+.main-content[style*="flex"],
+.user-page[style*="flex"],
+.manager-page[style*="flex"],
+.charger-page[style*="flex"],
+.promotion-page[style*="flex"] {
+  display: flex !important;         /* Ép hiển thị flex khi JS bật */
+}
+
+/* ==================== BANK ACCOUNT PAGE LAYOUT ==================== */
+#bankAccountPage {
+  display: block;
+}
+
+.top-section {
+  display: flex;
+  gap: 20px;
+  padding: 10px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.bank-management {
+  flex: 6;
+  position: relative;
+}
+
+.dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.dropdown-toggle {
+  width: 100%;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.dropdown-toggle i {
+  float: right;
+  margin-top: 5px;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+  display: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.bank-item {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  color: black;
+}
+
+.bank-item:last-child {
+  border-bottom: none;
+}
+
+.bank-actions button {
+  margin-left: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.btn-edit { background: #007bff; color: white; border: none; border-radius: 4px; }
+.btn-delete { background: #dc3545; color: white; border: none; border-radius: 4px; }
+
+.btn-add-bank {
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.price-management {
+  flex: 4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  gap: 15px;
+}
+
+.price-display {
+  font-size: 18px;
+  color: black;
+}
+
+.btn-update-price {
+  padding: 10px 20px;
+  background: #ffc107;
+  color: black;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.bottom-section {
+  background: white;
+  padding: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border-radius: 12px;
+}
+
+.total-records {
+  display: flex;
+  align-items: center;
+  color: black;
+  font-weight: 600;
+  gap: 8px;
+}
+
+.table-container {
+  flex: 1;
+  overflow: auto;
+}
+
+.bank-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bank-table th, .bank-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  color: black;
+}
+
+.bank-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+}
+
+/* Phân trang đẹp, luôn trên 1 dòng, có nút < > */
+.pagination {
+  margin-top: 15px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pagination button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.pagination button:hover {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.pagination button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.pagination button:disabled {
+  background: #eee;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 0;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-body input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid #eee;
+  text-align: right;
+  gap: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-submit {
+  padding: 10px 20px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ==================== USER PAGE ==================== */
+.user-page {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  gap: 16px;
+  padding: 12px;
+  background: #f9fbfc;
+}
+
+/* Phần tìm kiếm + lọc */
+.top-user-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 32px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.search-box {
+  position: relative;
+  width: 380px;
+}
+.search-box input {
+  width: 100%;
+  padding: 14px 50px 14px 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 14px;
+  font-size: 15px;
+  outline: none;
+  transition: all 0.3s;
+}
+.search-box input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 5px rgba(0,123,255,0.15);
+}
+.search-box i {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 19px;
+}
+
+.role-filter select {
+  padding: 14px 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 14px;
+  font-size: 15px;
+  min-width: 200px;
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Phần dưới */
+.bottom-user-section {
+  flex: 1;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.section-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+.total-rec {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+}
+
+/* GRID CHÍNH */
+.user-grid-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  background: white;
+}
+
+.user-grid-header,
+.user-grid-row {
+  display: grid;
+  grid-template-columns: 15% 13% 17% 10% 13% 10% 17%;
+  text-align: center;
+  align-items: center;
+  min-height: 56px;
+  padding: 10 12px;
+  color: black;
+}
+
+.user-grid-header {
+  color: black;
+  font-weight: 600;
+  font-size: 14.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-grid-body {
+  flex: 1;
+  overflow-y: auto;
+  background: #fdfdfd;
+}
+
+.user-grid-row {
+  border-bottom: 1px solid #eee;
+  transition: all 0.25s ease;
+  background: white;
+}
+.user-grid-row:hover {
+  background: linear-gradient(90deg, #f0f7ff 0%, #f8f5ff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  border-color: #007bff;
+}
+.user-grid-row:nth-child(even) {
+  background: #f8fbff;
+}
+
+/* Nội dung cột */
+.user-grid-row > div {
+  padding: 12px 8px;
+  overflow: hidden;
+}
+.user-grid-row > div:nth-child(2),
+.user-grid-row > div:nth-child(3) {
+  text-align: left;
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+.user-grid-row > div:not(:nth-child(2)):not(:nth-child(3)) {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Badge vai trò */
+.role-badge {
+  padding: 7px 16px;
+  border-radius: 30px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.role-0 { background: #e3f2fd; color: #1976d2; }
+.role-1 { background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%); color: #c62828; }
+.role-2 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #d81b60; }
+
+/* Nút hành động */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 70px;
+}
+.btn-view {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+}
+.btn-view:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102,126,234,0.6);
+}
+.btn-delete {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+}
+.btn-delete:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255,107,107,0.6);
+}
+
+/* ==================== Manager Page ========================*/
+
+/* Container chính của tab Manager */
+.manager-page {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  background: #f8f9fa;
+}
+
+.manager-search-bar {
+  padding: 10px 24px;
+  background: white;
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.search-box {
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-box i {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 18px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 14px 20px 14px 50px;
+  border: 2px solid #ddd;
+  border-radius: 50px;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.manager-list-section {
+  flex: 1;
+  padding: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.manager-grid-container {
+  flex: 1;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #eee;
+}
+
+/* Header bảng */
+.manager-grid-header {
+  display: grid;
+  grid-template-columns: 15% 15% 15% 25% 25%;
+  text-align: center;
+  padding: 18px 12px;
+  color: black;
+  font-weight: 600;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.manager-grid-body {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+/* Dòng dữ liệu */
+.manager-grid-row {
+  display: grid;
+  grid-template-columns: 15% 15% 15% 25% 25%;
+  text-align: center;
+  padding: 10px 12px;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+  color: black;
+}
+
+.manager-grid-row:hover {
+  background: #f8f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+}
+
+.manager-grid-row:nth-child(even) {
+  background: #fcfcfc;
+}
+
+.manager-grid-row:nth-child(even):hover {
+  background: #f5f5ff;
+}
+
+/* Nút hành động */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-view   { background: #3498db; color: white; }
+.btn-add    { background: #27ae60; color: white; }
+.btn-delete { background: #e74c3c; color: white; }
+
+.btn-view:hover   { background: #2980b9; }
+.btn-add:hover    { background: #219a52; }
+.btn-delete:hover { background: #c0392b; }
+
+.close {
+  font-size: 34px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.close:hover {
+  opacity: 0.7;
+  transform: scale(1.1);
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #667eea;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.btn-cancel{
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn-cancel:hover { background: #7f8c8d; }
+.btn-save:hover   { background: #219a52; transform: translateY(-2px); }
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/*======================= CHARGER Page ===========================*/
+.charger-page {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  gap: 16px;
+  padding: 12px;
+  background: #f5f7fa;
+}
+
+.top-charger-section {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.add-charger-box h3{
+  width: 220px;
+  display: inline-block;
+  font-size: 16px;
+}
+
+.input-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+#chargerQuantity {
+  width: 80px;
+  text-align: center;
+  font-size: 18px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  outline: none;
+}
+
+#btnAddChargers {
+  padding: 5px 30px;
+  font-size: 15px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s;
+}
+
+#btnAddChargers:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.6);
+}
+
+#addResult {
+  min-height: 24px;
+  font-size: 15px;
+}
+
+.bottom-charger-section {
+  flex: 1;
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.charger-grid-container {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+
+}
+
+.charger-grid-header,
+.charger-grid-row {
+  display: grid;
+  grid-template-columns: 20% 25% 25% 30%;
+  text-align: center;
+  align-items: center;
+  min-height: 60px;
+  padding: 10 12px;
+  color: black;
+}
+
+.charger-grid-header {
+  color: black;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.charger-grid-body {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.charger-grid-row {
+  border-bottom: 1px solid #eee;
+  transition: 0.3s;
+}
+
+.charger-grid-row:hover {
+  background: #f0f7ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.status-badge {
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.status-AVAILABLE { background: #d4edda; color: #155724; }
+.status-CHARGING { background: #cce5ff; color: #004085; }
+.status-UNAVAILABLE { background: #f8d7da; color: #721c24; }
+
+.progress-bar {
+  height: 10px;
+  background: #e9ecef;
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  width: 0%;
+  transition: width 0.4s ease;
+  border-radius: 5px;
+}
+
+.btn-edit { background: #ffc107; color: black; }
+
+/*======================= PROMOTION Page ===========================*/
+.promotion-page {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  background: #f8f9fa;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+.filter-group select {
+  padding: 11px 18px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  font-size: 15px;
+  background: white;
+  cursor: pointer;
+  min-width: 180px;
+  transition: all 0.3s ease;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+}
+
+/* Phần danh sách chính */
+.promotion-list-section {
+  flex: 1;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.promotion-grid-container {
+  flex: 1;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e8e8e8;
+}
+
+/* Header bảng */
+.promotion-grid-header {
+  display: grid;
+  grid-template-columns: 15% 18% 20% 27% 20%;
+  text-align: center;
+  padding: 10px 12px;
+  color: black;
+  font-weight: 600;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* Body bảng */
+.promotion-grid-body {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.promotion-grid-row {
+  display: grid;
+  grid-template-columns: 15% 18% 20% 27% 20%;
+  text-align: center;
+  padding: 10px 12px;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  color: black;
+}
+
+.promotion-grid-row:hover {
+  background: #f8f9ff;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.18);
+}
+
+.promotion-grid-row:nth-child(even) {
+  background: #fcfcfc;
+}
+
+.promotion-grid-row:nth-child(even):hover {
+  background: #f0f2ff;
+}
+
+/* Badge trạng thái – hỗ trợ cả chữ hoa và thường */
+.status-Pending,
+.status-PENDING     { background: #f39c12; color: white; }
+.status-Approved,
+.status-APPROVED    { background: #27ae60; color: white; }
+.status-Rejected,
+.status-REJECTED    { background: #e74c3c; color: white; }
+
+.status-badge {
+  padding: 7px 16px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+/* Nút hành động */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-save {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #219a52;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
+}
+
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .promotion-grid-header,
+  .promotion-grid-row {
+    grid-template-columns: 1fr;
+    text-align: left;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .promotion-grid-header > div,
+  .promotion-grid-row > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .promotion-grid-header > div::after {
+    content: ":";
+    margin-left: 8px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+}

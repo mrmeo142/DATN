@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.charging_station_web.config.JwtUtil;
+import com.example.charging_station_web.dto.ManagerMapDTO;
 import com.example.charging_station_web.entities.Chargers;
 import com.example.charging_station_web.entities.Users;
 import com.example.charging_station_web.services.ChargerServices;
@@ -60,7 +61,7 @@ public class ChargerControllers {
             for(int i =0 ; i < numbers; i++){
                 Chargers charger = new Chargers();
                 charger.setProcess("unprocessed");
-                charger.setStatus("INACTIVE");
+                charger.setStatus("OFF");
                 chargerServices.saveCharger(charger);
             }
             return ResponseEntity.status(HttpStatus.ACCEPTED)
@@ -109,14 +110,14 @@ public class ChargerControllers {
         } 
     }
 
-    // get all chargers (for user/admin) (done)
+    // get all chargers (done)
     @GetMapping("/manager/{mngId}")
     public ResponseEntity<?> getAllChargersByMngId(@PathVariable String mngId, HttpServletRequest request) {
         try{
             Users currentUser = getUserFromToken(request);
-            if (currentUser.getRole() != 0 && currentUser.getRole() != 1) { 
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Access denied: User or Admin"));
+            if (currentUser == null) { 
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", " User not found"));
             }
             List<Chargers> ch = chargerServices.findAllByMngId(mngId);
             return ResponseEntity.ok(ch);
@@ -144,6 +145,7 @@ public class ChargerControllers {
                     .body(Map.of("message", e.getMessage()));
         } 
     }
+    
     // get all chargers (for admin) (done)
     @GetMapping("/all")
     public ResponseEntity<?> getAllChargers(HttpServletRequest request) {
@@ -172,7 +174,27 @@ public class ChargerControllers {
                         .body(Map.of("message", "Access denied: Admin or Manager"));
             }
             Chargers update = chargerServices.findChargerById(chargerId);
-            update.setProcess("maintenance");
+            update.setStatus("MAINTENANCE");
+            Chargers ch = chargerServices.saveCharger(update);
+            return ResponseEntity.ok(ch);
+        }
+        catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Update failed"));
+        } 
+    }
+
+    // active charger (for manager) (done)
+    @PutMapping("/active/{chargerId}")
+    public ResponseEntity<?> activeCharger(@PathVariable String chargerId, HttpServletRequest request) {
+        try{
+            Users currentUser = getUserFromToken(request);
+            if (currentUser.getRole() != 2) { 
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Access denied: Manager only"));
+            }
+            Chargers update = chargerServices.findChargerById(chargerId);
+            update.setStatus("OFF");
             Chargers ch = chargerServices.saveCharger(update);
             return ResponseEntity.ok(ch);
         }
@@ -198,5 +220,10 @@ public class ChargerControllers {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));
         } 
+    }
+
+    @GetMapping("/map-locations")
+    public ResponseEntity<List<ManagerMapDTO>> getManagerLocationsForMap(HttpServletRequest request) {
+    return ResponseEntity.ok(chargerServices.getManagerLocationsForMap());
     }
 }

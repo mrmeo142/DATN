@@ -8,4 +8,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 public interface ChargerRepositories extends MongoRepository<Chargers, String> {
     List<Chargers> findByMngId(String mngId);
     List<Chargers> findByProcess(String process);
+    
 }

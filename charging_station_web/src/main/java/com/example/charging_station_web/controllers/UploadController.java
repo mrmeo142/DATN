@@ -56,7 +56,7 @@ public class UploadController {
             byte[] imageBytes = Base64.getDecoder().decode(imageBase64.replaceAll("\\s", ""));
 
             // Gửi sang server AI
-            String url = "http://192.168.0.102:8000/detect/" + chargerId;
+            String url = "http://192.168.0.101:8000/detect/" + chargerId;
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
@@ -70,20 +70,18 @@ public class UploadController {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // RestTemplate với timeout + error handler
+            // RestTemplate với timeout
             RestTemplate restTemplate = new RestTemplate();
             SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-            factory.setConnectTimeout(8000);  // 8 giây kết nối
-            factory.setReadTimeout(15000);    // 15 giây chờ phản hồi (YOLO có thể chậm)
+            factory.setConnectTimeout(8000);  
+            factory.setReadTimeout(15000);   
             restTemplate.setRequestFactory(factory);
 
             try {
                 ResponseEntity<String> aiResponse = restTemplate.exchange(
                         url, HttpMethod.POST, requestEntity, String.class);
 
-                // Nếu Python trả 200 OK
                 Map<String, Object> aiResult = mapper.readValue(aiResponse.getBody(), new TypeReference<>() {});
-
                 List<String> plates = mapper.convertValue(aiResult.get("plates"), new TypeReference<List<String>>() {});
                 String plate = (plates != null && !plates.isEmpty()) ? plates.get(0).trim() : "";
 
@@ -118,7 +116,7 @@ public class UploadController {
                 mqttService.sendCaptureCommand(chargerId, "capture");
                 response.put("success", false);
                 response.put("error", "Nhận diện thất bại – chụp lại");
-                return ResponseEntity.status(200).body(response); // vẫn trả 200 để frontend không lỗi
+                return ResponseEntity.status(200).body(response); 
 
             } catch (ResourceAccessException e) {
                 // Timeout hoặc không kết nối được Python server

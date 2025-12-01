@@ -59,7 +59,7 @@ if (!token || isTokenExpired(token)) {
 }
 
 // ===================== MỞ KẾT NỐI WEBSOCKET ==================================
-        const socket = new SockJS('http://localhost:8080/ws'); 
+        const socket = new SockJS(`${API_BASE}/ws`); 
         const stompClient = Stomp.over(socket);
         stompClient.debug = null;
 
@@ -140,13 +140,11 @@ const chargingBtn = document.querySelector(".sidebar-left nav li:nth-child(1)");
 const profileBtn = document.querySelector(".sidebar-left nav li:nth-child(2)");
 const walletBtn = document.querySelector(".sidebar-left nav li:nth-child(3)");
 const registrationBtn = document.querySelector(".sidebar-left nav li:nth-child(4)");
-const authenBtn = document.querySelector(".sidebar-left nav li:nth-child(5)");
 
 const mainContent = document.querySelector(".main-content");
 const sidebarRight = document.querySelector(".sidebar-right");
 const profilePage = document.querySelector(".profile-page");
 const registrationPage = document.querySelector(".registration-page");
-const authenPage = document.querySelector(".authentication-page");
 const walletPage = document.querySelector(".wallet-page");
 
 // Reset active menu
@@ -160,7 +158,6 @@ function hideAllPages() {
   sidebarRight.style.display = "none";
   profilePage.style.display = "none";
   registrationPage.style.display = "none";
-  authenPage.style.display = "none";
   walletPage.style.display = "none";
 }
 
@@ -188,14 +185,6 @@ registrationBtn.addEventListener("click", () => {
   registrationPage.style.display = "block";
   clearActive();
   registrationBtn.classList.add("active");
-});
-
-/* ========== AUTHENTICATION ========== */
-authenBtn.addEventListener("click", () => {
-  hideAllPages();
-  authenPage.style.display = "block";
-  clearActive();
-  authenBtn.classList.add("active");
 });
 
 /* ========== WALLET ========== */
@@ -451,8 +440,7 @@ document.addEventListener("DOMContentLoaded", () => {
 profileBtn?.addEventListener("click", loadVehicles);
 
 
-/* ========== REGISTRATION LOGIC ========== */
-/* ===================== REGISTRATION PAGE – FULL API REAL ===================== */
+/* ======================== REGISTRATION LOGIC ============================ */
 const registrationForm = document.querySelector('.registration-form');
 const registerBtn = document.getElementById("registration-form");
 const statusEl = document.getElementById("registrationStatus");
@@ -469,7 +457,7 @@ const inputs = {
 
 let currentPromoteId = null; // Lưu ID yêu cầu đăng ký (nếu có)
 
-/* ===== 1. TẢI THÔNG TIN NGƯỜI DÙNG + TRẠNG THÁI ĐĂNG KÝ ===== */
+/* ===== TẢI THÔNG TIN NGƯỜI DÙNG + TRẠNG THÁI ĐĂNG KÝ ===== */
 async function loadRegistrationData() {
     try {
         const res = await fetch(`${API_BASE}/profile`, {
@@ -477,7 +465,6 @@ async function loadRegistrationData() {
         });
         if (!res.ok) throw new Error();
         const user = await res.json();
-        console.log(user);
 
         // Điền thông tin vào form (chỉ điền nếu có dữ liệu)
         inputs.fullName.value = user.fullname || '';
@@ -501,7 +488,7 @@ async function loadRegistrationData() {
     }
 }
 
-/* ===== 2. KIỂM TRA TRẠNG THÁI YÊU CẦU ĐĂNG KÝ ===== */
+/* ===== KIỂM TRA TRẠNG THÁI YÊU CẦU ĐĂNG KÝ ===== */
 async function checkPromoteStatus() {
     try {
         const res = await fetch(`${API_BASE}/promote/user`, {
@@ -529,14 +516,14 @@ async function checkPromoteStatus() {
     }
 }
 
-/* ===== 3. HIỆN NÚT REGISTER ===== */
+/* ===== HIỆN NÚT REGISTER ===== */
 function showRegisterButton() {
     registerBtn.style.display = "block";
     registerBtn.textContent = "Register";
     statusEl.style.display = "none";
 }
 
-/* ===== 4. HIỂN THỊ TRẠNG THÁI ===== */
+/* ===== HIỂN THỊ TRẠNG THÁI ===== */
 function setRegistrationStatus(status) {
     statusEl.style.display = "inline-block";
     statusEl.className = "registration-status " + status;
@@ -544,7 +531,7 @@ function setRegistrationStatus(status) {
     registerBtn.style.display = "none";
 }
 
-/* ===== 5. XỬ LÝ KHI NHẤN REGISTER ===== */
+/* ===== XỬ LÝ KHI NHẤN REGISTER ===== */
 registerBtn.addEventListener("click", async function(e) {
     e.preventDefault();
 
@@ -608,50 +595,6 @@ document.addEventListener("DOMContentLoaded", () => {
 registrationBtn?.addEventListener("click", () => {
     setTimeout(loadRegistrationData, 100);
 });
-
-
-/* ========== AUTHENTICATION LOGIC ========== */
-const authForm = document.getElementById("authForm");
-const authStatus = document.getElementById("authStatus");
-const verifyBtn = document.querySelector(".verify-btn");
-
-authForm.addEventListener("submit", function(e) {
-  e.preventDefault();
-
-  if (!document.getElementById("frontImage").files.length ||
-      !document.getElementById("backImage").files.length) {
-    alert("Vui lòng chọn đủ ảnh mặt trước và mặt sau.");
-    return;
-  }
-
-  verifyBtn.style.display = "none";
-  authStatus.style.display = "inline-block";
-  authStatus.textContent = "Authenticated";
-});
-
-function previewImage(input, previewId) {
-    const file = input.files[0];
-    const preview = document.getElementById(previewId);
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        preview.src = e.target.result;
-        preview.style.display = "block";
-      }
-      reader.readAsDataURL(file);
-    } else {
-      preview.src = "";
-      preview.style.display = "none";
-    }
-  }
-
-  document.getElementById("frontImage").addEventListener("change", function() {
-    previewImage(this, "frontPreview");
-  });
-
-  document.getElementById("backImage").addEventListener("change", function() {
-    previewImage(this, "backPreview");
-  });
 
 // ĐỊNH DẠNG TIỀN VIỆT NAM
 function formatVND(amount) {
@@ -735,6 +678,14 @@ chargingStateBtn.addEventListener("click", async () => {
             // Subscribe realtime log
             stompClient.subscribe('/topic/log/' + billId, function(message) {
                 const logData = JSON.parse(message.body);
+
+                if (!chart) {
+                    initRealtimeChart();
+                }
+                updateRealtimeChart(
+                    (logData.voltage || 0),  // Chuyển V → kV
+                    logData.current || 0           // A
+                );
                 console.log('Realtime log:', logData); 
 
                 const batteryEl = document.getElementById('batteryPercentage');
@@ -765,10 +716,10 @@ chargingStateBtn.addEventListener("click", async () => {
                 if (totalE2) totalE2.textContent = (logData.totalCharger || 0) + ' kWh';
 
                 const costEl = document.getElementById('totalCost');
-                if (costEl) costEl.textContent = formatVND(logData.amount) + ' VND';
+                if (costEl) costEl.textContent = formatVND(logData.amount);
 
                 const priceEl = document.getElementById('price');
-                if (priceEl) priceEl.textContent = (formatVND(logData.price) || 0.09) + ' VND';
+                if (priceEl) priceEl.textContent = (formatVND(logData.price) || 0.09);
 
                 const batteryLevel = document.querySelector('.battery-level');
                 
@@ -816,6 +767,7 @@ chargingStateBtn.addEventListener("click", async () => {
                     chargingState = "continue";
                     updateChargingUI();
                     showBillModal(latestBill);  // TỰ ĐỘNG HIỆN BILL
+                    resetRealtimeChart();
                 }
             }
         } catch (err) {
@@ -846,6 +798,142 @@ chargingStateBtn.addEventListener("click", async () => {
     }
 });
 
+/* ===================== REALTIME CHART – ĐỈNH CAO CÔNG NGHỆ ===================== */
+let chart = null;
+const MAX_DATA_POINTS = 50; // chỉ giữ 50 điểm gần nhất → mượt
+const labels = [];
+const voltageData = [];
+const currentData = [];
+
+// TẠO ĐỒ THỊ KHI BẮT ĐẦU SẠC
+function initRealtimeChart() {
+    const ctx = document.getElementById('realtimeChart').getContext('2d');
+    
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Voltage (kV)',
+                    data: voltageData,
+                    borderColor: '#00ff88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#00ff88',
+                    fill: true,
+                    yAxisID: 'y-voltage'
+                },
+                {
+                    label: 'Current (A)',
+                    data: currentData,
+                    borderColor: '#ff0080',
+                    backgroundColor: 'rgba(255, 0, 128, 0.1)',
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#ff0080',
+                    fill: true,
+                    yAxisID: 'y-current'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 0 // tắt animation để mượt hơn
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Realtime Charging Monitor',
+                    color: '#fff',
+                    font: { size: 18, weight: 'bold' }
+                },
+                legend: {
+                    labels: { color: '#fff', font: { size: 14 } }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#aaa', maxTicksLimit: 10 },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                'y-voltage': {
+                    type: 'linear',
+                    position: 'left',
+                    min: 0,
+                    max: 5,
+                    ticks: { 
+                        color: '#00ff88',
+                        callback: value => value + ' kV'
+                    },
+                    grid: { color: 'rgba(0,255,136,0.2)' },
+                    title: {
+                        display: true,
+                        text: 'Voltage',
+                        color: '#00ff88',
+                        font: { size: 14 }
+                    }
+                },
+                'y-current': {
+                    type: 'linear',
+                    position: 'right',
+                    min: 0,
+                    max: 100,
+                    ticks: { 
+                        color: '#ff0080',
+                        callback: value => value + ' A'
+                    },
+                    grid: { drawOnChartArea: false },
+                    title: {
+                        display: true,
+                        text: 'Current',
+                        color: '#ff0080',
+                        font: { size: 14 }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// CẬP NHẬT ĐỒ THỊ THEO DỮ LIỆU REALTIME
+function updateRealtimeChart(voltage, current) {
+    const now = new Date().toLocaleTimeString('vi-VN', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+    });
+
+    labels.push(now);
+    voltageData.push(voltage);
+    currentData.push(current);
+
+    // Giữ tối đa 50 điểm
+    if (labels.length > MAX_DATA_POINTS) {
+        labels.shift();
+        voltageData.shift();
+        currentData.shift();
+    }
+
+    if (chart) {
+        chart.update('quiet'); 
+    }
+}
+
+// RESET ĐỒ THỊ KHI DỪNG SẠC
+function resetRealtimeChart() {
+    if (chart) {
+        chart.destroy();
+        chart = null;
+    }
+    labels.length = 0;
+    voltageData.length = 0;
+    currentData.length = 0;
+    document.querySelector('.chart-summary').innerHTML = '<canvas id="realtimeChart"></canvas>';
+}
 // Khởi động UI
 updateChargingUI();
 
@@ -861,9 +949,9 @@ function formatTime(seconds) {
 // LẤY BILL MỚI NHẤT QUA API GET
 async function fetchLatestBill(billId) {
     try {
-        const response = await fetch(`http://localhost:8080/bills/${billId}`, {
+        const response = await fetch(`${API_BASE}/bills/${billId}`, {
             headers: {
-                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                'Authorization': 'Bearer ' + token
             }
         });
         if (response.ok) {
@@ -929,10 +1017,10 @@ document.getElementById('cancelBillBtn').onclick = () => {
 // THANH TOÁN QUA PUT /bills/paid/{billId}
 document.getElementById('submitPaymentBtn').onclick = async () => {
     try {
-        const res = await fetch(`http://localhost:8080/bills/paid/${billId}`, {
+        const res = await fetch(`${API_BASE}/bills/paid/${billId}`, {
             method: 'PUT',
             headers: {
-                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken'),
+                'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
             }
         });
@@ -945,6 +1033,7 @@ document.getElementById('submitPaymentBtn').onclick = async () => {
             currentBillData = null;
             updateChargingUI();
             alert('Thanh toán thành công!');
+            location.reload();
         } else {
             alert("Thanh toán thất bại. Vui lòng thử lại!");
         }
@@ -963,6 +1052,121 @@ paymentBtn.onclick = async () => {
     if (latestBill) showBillModal(latestBill);
 };
 
+/* GOOGLE MAP + TRẠM MANAGER – AN TOÀN, ĐẸP, CHUYÊN NGHIỆP */
+let map;
+let markers = [];
+let infoWindows = [];
+
+// Khởi tạo bản đồ
+function initGoogleMap() {
+    map = new google.maps.Map(document.getElementById("googleMap"), {
+        zoom: 11,
+        center: { lat: 10.762622, lng: 106.660172 },
+        mapTypeId: "roadmap",
+        styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }]
+    });
+
+    loadManagerLocations();
+}
+
+// TẢI DANH SÁCH MANAGER (CHỈ CÓ ĐỊA CHỈ + ID ẨN)
+async function loadManagerLocations() {
+    try {
+        const token = localStorage.getItem('jwtToken');
+        const res = await fetch('http://localhost:8080/charger/map-locations', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) throw new Error();
+        const locations = await res.json();
+
+        locations.forEach(loc => {
+            if (!loc.latitude || !loc.longitude) return;
+
+            const marker = new google.maps.Marker({
+                position: { lat: loc.latitude, lng: loc.longitude },
+                map: map,
+                icon: {
+                    url: loc.status === "active" 
+                        ? "https://img.icons8.com/fluency/48/electricity.png"
+                        : "https://img.icons8.com/color/48/no-electricity.png",
+                    scaledSize: new google.maps.Size(50, 50)
+                },
+                title: loc.stationName
+            });
+
+            // Tạo InfoWindow (chưa mở)
+            const infoWindow = new google.maps.InfoWindow();
+
+            // KHI CLICK → GỌI API LẤY CHI TIẾT THEO managerId (ẨN TRONG DATA)
+            marker.addListener("click", async () => {
+                // Đóng tất cả infoWindow cũ
+                infoWindows.forEach(iw => iw.close());
+                infoWindows = [];
+                try {
+                    const detailRes = await fetch(`http://localhost:8080/charger/manager/${loc.managerId}`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+
+                    if (!detailRes.ok) throw new Error();
+
+                    const chargers = await detailRes.json();
+
+                    const chargerList = chargers.map(c => 
+                        `<li style="margin:4px 0; padding:8px; background:#f8f9fa; border-radius:8px;">
+                            <strong>${c.chargerName}</strong> - ${c.status === 'AVAILABLE' ? 'Trống' : 'Đang sạc'}
+                         </li>`
+                    ).join('');
+
+                    infoWindow.setContent(`
+                        <div style="font-family:Arial; min-width:280px; max-height:400px; overflow-y:auto;">
+                            <p style="margin:4px 0; color:#555;"><strong>Địa chỉ:</strong> ${loc.address}</p>
+                            <p style="margin:8px 0; color:#0f9d58; font-weight:bold;">
+                                Tổng: ${chargers.length} cổng sạc
+                            </p>
+                            <details style="margin-top:10px;">
+                                <summary style="cursor:pointer; color:#1a73e8; font-weight:bold;">Xem chi tiết</summary>
+                                <ul style="margin:8px 0; padding-left:20px;">${chargerList}</ul>
+                            </details>
+                            <div style="margin-top:10px; text-align:center;">
+                                <button onclick="navigateToCharger(${loc.address})" 
+                                        style="background:#1a73e8; color:white; border:none; padding:10px 16px; border-radius:8px; cursor:pointer;">
+                                    Chỉ đường đến đây
+                                </button>
+                            </div>
+                        </div>
+                    `);
+
+                    infoWindow.open(map, marker);
+                    infoWindows.push(infoWindow);
+
+                } catch (err) {
+                    infoWindow.setContent(`<p style="color:red;">Không tải được thông tin trạm!</p>`);
+                    infoWindow.open(map, marker);
+                }
+            });
+
+            markers.push(marker);
+        });
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("googleMap").innerHTML = "<p style='text-align:center;padding:50px;color:#999;'>Không tải được bản đồ</p>";
+    }
+}
+
+// Hàm chỉ đường (tùy chọn)
+function navigateToCharger(managerId) {
+    alert("Đang mở Google Maps chỉ đường đến trạm này...");
+    // Có thể mở: window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`)
+}
+
+// GỌI KHI VÀO TRANG
+document.addEventListener("DOMContentLoaded", () => {
+    if (document.getElementById("googleMap")) {
+        setTimeout(initGoogleMap, 800);
+    }
+});
 /* ===================== WALLET & HISTORY – FULL API REAL ===================== */
 
 const walletTab = document.getElementById('walletTab');

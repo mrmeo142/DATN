@@ -6,7 +6,7 @@ const char* ssid = "TP-LINK_30FA";
 const char* password= "minhhue77";
 
 // MQTT
-const char* mqtt_server = "192.168.0.102";
+const char* mqtt_server = "192.168.0.101";
 const int mqtt_port = 1883;
 const char* mqtt_user = "";   // nếu broker có user/pass thì thêm vào
 const char* mqtt_pass = "";
@@ -26,7 +26,7 @@ PubSubClient client(espClient);
 
 bool senData = false;
 String billId = "";
-int a = 1, b =1, c=1;
+int a = 2, b =4, c=50;
 // callback function
 void callback(char* topic, byte* payload, unsigned int length){
   String msg;

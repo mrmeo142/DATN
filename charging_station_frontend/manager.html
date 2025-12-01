@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DHT - EV Charging Stations</title>
+  <meta name="title" content="DHT - EV Charging Stations">
+  <meta name="description" content="This is a vahicle charging html template made by codewithsadee">
+  <link rel="shortcut icon" href="./assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="./assets/css/style.css">
+  <link rel="stylesheet" href="./assets/css/manager.css">
+
+</head>
+
+<body>
+  <header class="header" data-header id = "header">
+    <div class="container">
+
+      <a href="index.html" class="logo">
+        <img src="./assets/images/logo.svg" width="160" height="50" alt="logo">
+      </a>
+      <div class="header-action">
+        <a href="#" class="btn btn-primary" id="loginBtn">
+          <span class="span">User</span>          
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-container">
+      <aside class="sidebar-left">
+      <nav>
+        <ul>
+          <li class="active"><i class="fa-solid fa-charging-station"></i>  CHARGER</li>
+          <li><i class="fa-solid fa-user"></i>  BILL</li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- CHARGER SECTION -->
+    <section class="charger-page" id="chargerPage">
+      <!-- Danh sách trạm sạc -->
+      <div class="charger-list-section">
+        <div class="section-title">
+          <h3>Danh sách trạm sạc</h3>
+          <div class="total-records">Tổng: <span id="totalChargers">0</span> trạm</div>
+          <div class="filter-group">
+            <label>Lọc trạng thái:</label>
+            <select id="filterChargerStatus">
+              <option value="">Tất cả trạm</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="OFF">OFF</option>
+              <option value="MAINTENANCE">MAINTENANCE</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="charger-grid-container">
+          <div class="charger-grid-header">
+            <div>ID trạm</div>
+            <div>Trạng thái</div>
+            <div>Hành động</div>
+          </div>
+          <div class="charger-grid-body" id="chargerGridBody">
+            <!-- JS render -->
+          </div>
+        </div>
+
+        <div class="pagination" id="chargerPagination"></div>
+      </div>
+
+      <!-- MODAL XEM CHI TIẾT TRẠM -->
+      <div class="modal" id="chargerDetailModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Chi tiết trạm sạc</h3>
+            <span class="close" onclick="closeChargerDetail()">×</span>
+          </div>
+          <div class="modal-body" id="chargerDetailBody"></div>
+          <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeChargerDetail()">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BILL SECTION (ẩn ban đầu) -->
+    <section class="bill-page" id="billPage">
+      <!-- HEADER + TỔNG TIỀN -->
+      <div class="bill-header">
+        <h3>Doanh thu trạm sạc</h3>
+        <div class="summary-cards">
+          <div class="summary-card">
+            <span>Tổng doanh thu</span>
+            <strong id="totalRevenue">0 ₫</strong>
+          </div>
+          <div class="summary-card">
+            <span>Hôm nay</span>
+            <strong id="todayRevenue">0 ₫</strong>
+          </div>
+          <div class="summary-card">
+            <span>Tháng này</span>
+            <strong id="monthRevenue">0 ₫</strong>
+          </div>
+          <div class="summary-card">
+            <span>Năm nay</span>
+            <strong id="yearRevenue">0 ₫</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- BỘ LỌC THEO THỜI GIAN -->
+      <div class="bill-filter">
+        <div class="filter-group">
+          <label>Lọc theo thời gian:</label>
+          <select id="filterTime">
+            <option value="all">Tất cả</option>
+            <option value="today">Hôm nay</option>
+            <option value="thisMonth">Tháng này</option>
+            <option value="thisYear">Năm nay</option>
+            <option value="custom">Tùy chọn</option>
+          </select>
+          <input type="date" id="customDate" style="display:none;">
+        </div>
+      </div>
+
+      <!-- DANH SÁCH BILL -->
+      <div class="bill-list-section">
+        <div class="section-title">
+          <h3>Danh sách hóa đơn</h3>
+          <div class="total-records">Tổng: <span id="totalBills">0</span> hóa đơn</div>
+        </div>
+
+        <div class="bill-grid-container">
+          <div class="bill-grid-header">
+            <div>ID hóa đơn</div>
+            <div>Số tiền</div>
+            <div>Khách hàng</div>
+            <div>Thời gian</div>
+            <div>Hành động</div>
+          </div>
+          <div class="bill-grid-body" id="billGridBody"></div>
+        </div>
+
+        <div class="pagination" id="billPagination"></div>
+      </div>
+
+      <!-- MODAL CHI TIẾT HÓA ĐƠN -->
+      <div class="modal" id="billDetailModal">
+        <div class="modal-content" style="max-width: 700px;">
+          <div class="modal-header">
+            <h3>Chi tiết hóa đơn</h3>
+            <span class="close" onclick="closeBillDetail()">×</span>
+          </div>
+          <div class="modal-body" id="billDetailBody"></div>
+          <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeBillDetail()">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script src="./assets/js/manager.js"></script>
+<script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

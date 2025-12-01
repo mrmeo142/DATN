@@ -42,11 +42,11 @@
           <li class="profile-btn"><i class="fa-solid fa-user"></i>  PROFILE</li>
           <li><i class="fa-solid fa-wallet"></i>  WALLET</li>
           <li class="registration-btn"><i class="fa-regular fa-address-card"></i>  REGISTRATION</li>
-          <li class="authen-btn"><i class="fa-solid fa-shield-halved"></i>  AUTHENTICATION</li>
         </ul>
       </nav>
     </aside>
 
+    <!-- CHARGING SECTION (ẩn ban đầu) -->
     <section class="main-content">
       <div class="vehicle-display">
         <img src="./assets/images/otodien.png" alt="Electric Car">
@@ -97,32 +97,34 @@
         <button id="paymentBtn" class="payment-btn" disabled style="display: none;">Payment</button>
       </div>
 
-      <!-- BILL POPUP – GIỮ NGUYÊN ID, CHỈ ĐỔI CLASS -->
-<div id="billModal" class="bill" style="display: none;">
-  <div class="bill-content">
-    <div class="bill-header">
-      <h2 class="bill-describe">ELECTRICITY BILL</h2>
-    </div>
-    <div class="bill-body">
-      <div class="bill-info">
-        <p><strong>User:</strong> <span id="billUserName">Loading...</span></p>
-        <p><strong>Description:</strong> <span id="billDescription">Electricity Bill</span></p>
-        <p><strong>Charger:</strong> <span id="billChargerId">-</span></p>
-        <p><strong>Plate:</strong> <span id="billVehicle">-</span></p>
-        <p><strong>Total time:</strong> <span id="billTotalTime">0 phút</span></p>
-        <p><strong>Time list:</strong></p>
-        <ul id="billTimeList"></ul>
-        <p><strong>Amount:</strong> <span id="billAmount">0 VND</span> </p>
+      <!-- BILL POPUP -->
+      <div id="billModal" class="bill" style="display: none;">
+        <div class="bill-content">
+          <div class="bill-header">
+            <h2 class="bill-describe">ELECTRICITY BILL</h2>
+          </div>
+          <div class="bill-body">
+            <div class="bill-info">
+              <p><strong>User:</strong> <span id="billUserName">Loading...</span></p>
+              <p><strong>Description:</strong> <span id="billDescription">Electricity Bill</span></p>
+              <p><strong>Charger:</strong> <span id="billChargerId">-</span></p>
+              <p><strong>Plate:</strong> <span id="billVehicle">-</span></p>
+              <p><strong>Total time:</strong> <span id="billTotalTime">0 phút</span></p>
+              <p><strong>Time list:</strong></p>
+              <ul id="billTimeList"></ul>
+              <p><strong>Amount:</strong> <span id="billAmount">0 VND</span> </p>
+            </div>
+          </div>
+          <div class="bill-footer">
+            <button id="cancelBillBtn" class="bill-cancel-btn">Hủy</button>
+            <button id="submitPaymentBtn" class="bill-submit-btn">Thanh toán ngay</button>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="bill-footer">
-      <button id="cancelBillBtn" class="bill-cancel-btn">Hủy</button>
-      <button id="submitPaymentBtn" class="bill-submit-btn">Thanh toán ngay</button>
-    </div>
-  </div>
-</div>
 
+      <!-- CHART -->
       <div class="chart-summary">
+        <canvas id="realtimeChart"></canvas>
       </div>
     </section>
 
@@ -242,24 +244,6 @@
         </div>
     </section>
 
-   <!-- AUTHENTICATION SECTION -->
-    <section class="authentication-page">
-      <div class="auth-container">
-        <h2>Identity Verification</h2>
-        <form id="authForm">
-          <label>Photo of front of ID card/CCCD:</label>
-          <input type="file" id="frontImage" accept="image/*" required>
-          <div class="img-preview-container"><img id="frontPreview" class="avatar-preview" /></div>
-
-          <label>Photo of back of ID card/CCCD:</label>
-          <input type="file" id="backImage" accept="image/*" required>
-          <div class="img-preview-container"><img id="backPreview" class="avatar-preview" /></div>
-          <button type="submit" class="verify-btn">Verify</button>
-        </form>
-        <div id="authStatus" class="auth-status" style="display:none;">Authenticated</div>
-      </div>
-    </section>
-
     <!-- WALLET SECTION (ẩn ban đầu) -->
     <section class="wallet-page">
       <div class="wallet-container">
@@ -360,13 +344,15 @@
     </section>
 
     <aside class="sidebar-right">
-      <div class="map-placeholder">
-        <img src="assets/images/thumbnail-web-ctv-5-4.jpg" alt="Map Placeholder">
-      </div>
+      <div id="googleMap" style="width:100%; height:100%; border-radius: 16px; overflow:hidden;"></div>
     </aside>
   </main>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAAH0hpXcjook5_ZxS_VhIACcXB8FYTZhI&callback=initGoogleMap" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="./assets/js/user.js"></script>
+<script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </body>
 </html>

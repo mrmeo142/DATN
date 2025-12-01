@@ -1,0 +1,502 @@
+:root {
+  --bg-dark-main: #0D0D0D;
+  --bg-dark-panel: #161616;
+  --bg-dark-card: #222222;
+  --text-primary: #FFFFFF;
+  --text-secondary: #AAAAAA;
+  --primary-green: hsl(86, 54%, 51%);
+  --border-color: #333333;
+   --white: hsl(0, 0%, 100%);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: hsl(0deg 0% 70%);
+  color: var(--text-primary);
+  height: 100%;
+}
+/* --- Header --- */
+#header {
+  position: fixed;
+  z-index: 999; /* luôn nằm trên các phần khác */
+}
+
+/* --- Bố cục Dashboard (CSS Grid) --- */
+.dashboard-container {
+  display: grid;
+  grid-template-columns: 15% 85%; /* 2 cột: Trái, Phải */
+  min-height: 550px;
+  max-width: 100%;
+  margin: 0 auto;
+  margin-top: 105px;
+  background-color: #ffffffeb;
+}
+
+/* --- 1. Sidebar Trái --- */
+.sidebar-left {
+  background-color: #00000012;
+  height: 100%;
+}
+
+.sidebar-left nav ul {
+  list-style: none;
+  margin-top: 10px;
+}
+
+.sidebar-left nav li {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  color: black;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sidebar-left nav li i {
+  width: 20px;
+  text-align: center;
+}
+
+.sidebar-left nav li:hover {
+  color: black;
+  background-color: #00000024;
+  border-radius: 12px;
+  margin: 5px;
+}
+
+.sidebar-left nav li.active {
+  color: black;
+  background-color: #00000024;
+  border-radius: 12px;
+  font-weight: 600;
+  margin: 5px;
+}
+
+/* --- 2. Nội dung chính (Giữa) --- */
+.main-content {
+  display: none;
+  grid-column: span 2;
+  border-radius: 12px;
+  background: white;
+  padding: 25px;
+  color: black;
+  min-height: 550px;
+}
+
+/* Đảm bảo tất cả page đều flex khi hiển thị */
+.bill-page,
+.message-page,
+.charger-page{
+  display: none;                    /* Ẩn mặc định */
+  flex-direction: column;
+  height: 100%;
+}
+
+.bill-page.active,
+.message-page.active, 
+.charger-page.active,
+.bill-page[style*="flex"],
+.message-page[style*="flex"],
+.charger-page[style*="flex"] {
+  display: flex !important;         /* Ép hiển thị flex khi JS bật */
+}
+/* ================= CHARGER PAGE ================= */
+
+.charger-page {
+  display: block;
+  flex-direction: column;
+  height: 100%;
+  background: #f8f9fa;
+}
+
+.charger-header {
+  padding: 20px 24px;
+  background: white;
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.filter-group select {
+  padding: 11px 18px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  font-size: 15px;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.charger-list-section {
+  flex: 1;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.charger-grid-container {
+  flex: 1;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.section-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.charger-grid-header,
+.charger-grid-row {
+  display: grid;
+  grid-template-columns: 35% 30% 35%;
+  text-align: center;
+  padding: 10px 12px;
+  align-items: center;
+  font-size: 15px;
+  color: black;
+}
+
+.charger-grid-header {
+  color: black;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.charger-grid-body {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.charger-grid-row {
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.3s;
+}
+
+.charger-grid-row:hover {
+  background: #f8f9ff;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(102,126,234,0.18);
+}
+
+.charger-grid-row:nth-child(even) {
+  background: #fcfcfc;
+}
+
+/* Badge trạng thái trạm */
+.status-ACTIVE       { background: #27ae60; color: white; }
+.status-OFF          { background: #95a5a6; color: white; }
+.status-MAINTENANCE  { background: #f39c12; color: white; }
+
+.close {
+  font-size: 34px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.close:hover {
+  opacity: 0.7;
+  transform: scale(1.1);
+}
+
+.total-records {
+  display: flex;
+  align-items: center;
+  color: black;
+  font-weight: 600;
+  gap: 8px;
+}
+
+code {
+  font-family: inherit !important;
+}
+
+/* Nút hành động */
+.charger-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.charger-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.btn-view-charger   { background: #3498db; color: white; }
+.btn-maintenance    { background: #f39c12; color: white; }
+.btn-off            { background: #e74c3c; color: white; }
+
+.btn-view-charger:hover   { background: #2980b9; transform: translateY(-2px); }
+.btn-maintenance:hover    { background: #e67e22; transform: translateY(-2px); }
+.btn-off:hover            { background: #c0392b; transform: translateY(-2px); }
+
+/* =============== BILL PAGE =============== */
+/* ==========================================================================
+   TAB BILL – ĐẸP NHƯ APP NGÂN HÀNG
+   ========================================================================== */
+
+.bill-page {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  background: #f8f9fa;
+}
+
+.bill-header {
+  padding: 20px 24px;
+  background: white;
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.bill-header h3 {
+  margin: 0 0 16px 0;
+  color: #2c3e50;
+  font-size: 24px;
+}
+
+.summary-cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.summary-card {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 16px;
+  min-width: 180px;
+  box-shadow: 0 6px 20px rgba(102,126,234,0.3);
+}
+
+.summary-card span {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.summary-card strong {
+  font-size: 22px;
+  font-weight: 700;
+  display: block;
+  margin-top: 6px;
+}
+
+.bill-filter {
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #eee;
+}
+
+.bill-list-section {
+  flex: 1;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+  color: black;
+}
+
+.bill-grid-container {
+  flex: 1;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+}
+
+.bill-grid-header,
+.bill-grid-row {
+  display: grid;
+  grid-template-columns: 20% 18% 22% 25% 15%;
+  text-align: center;
+  padding: 10px 12px;
+  align-items: center;
+  font-size: 15px;
+}
+
+.bill-grid-header {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bill-grid-body {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.bill-grid-row {
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.3s;
+}
+
+.bill-grid-row:hover {
+  background: #f8f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102,126,234,0.15);
+}
+
+.bill-amount {
+  font-weight: 700;
+  color: #27ae60;
+}
+
+.bill-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-view-bill {
+  padding: 8px 18px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-view-bill:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+
+/* ==================== MODAL ======================== */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 0;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-body input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.modal-footer {
+  padding: 10px;
+  border-top: 1px solid #eee;
+  text-align: right;
+  gap: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ================= PAGINATION ================= */
+
+/* Phân trang đẹp, luôn trên 1 dòng, có nút < > */
+.pagination {
+  margin-top: 15px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pagination button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.pagination button:hover {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.pagination button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.pagination button:disabled {
+  background: #eee;
+  color: #999;
+  cursor: not-allowed;
+}
+

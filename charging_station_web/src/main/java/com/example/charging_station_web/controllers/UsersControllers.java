@@ -127,7 +127,7 @@ public class UsersControllers {
 
     // get an user (done)
     @GetMapping("/profile")
-    public ResponseEntity<?> getUserById(HttpServletRequest request) {
+    public ResponseEntity<?> getUser(HttpServletRequest request) {
         try {
             Users user = getUserFromToken(request);
             return ResponseEntity.ok(user);
@@ -138,6 +138,24 @@ public class UsersControllers {
         }
     }
 
+    // get user by id (for admin) (done)
+    @GetMapping("/profile/{userId}")
+    public ResponseEntity<?> getUserById(HttpServletRequest request, @PathVariable String userId) {
+        try {
+            Users currentUser = getUserFromToken(request);
+            if (currentUser.getRole() != 1) {
+                return ResponseEntity
+                        .status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Access denied: Admin only"));
+            }
+            Users user = userServices.getUsersbyId(userId);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
     // update user (done)
     @PutMapping("/update")
     public ResponseEntity<?> updateUser(HttpServletRequest request, @RequestBody Users user) {
@@ -315,12 +333,6 @@ public class UsersControllers {
                     .body(Map.of("message", e.getMessage()));
         }
     }
-
-    // // get vehicle by identifier
-    // @GetMapping("/idevehicles/{identifier}")
-    // public Vehicles getVehicleByIdentifier(@PathVariable String identifier) {
-    //     return userServices.getVehicleByIdentifier(identifier);
-    // }
 
     // get vehicle by id (done)
     @GetMapping("/vehicles/{vehicleId}")

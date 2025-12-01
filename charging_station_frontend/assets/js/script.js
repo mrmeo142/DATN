@@ -255,13 +255,10 @@ if (loginUserForm) {
         body: JSON.stringify({ email, password }),
         mode: 'cors'
       });
-
-      console.log('Login response status:', response.status);
       const result = await response.json();
 
       if (response.ok && result.token) {
         const token = result.token;
-        console.log(token);
         localStorage.setItem('jwtToken', token);
 
         // lấy user fullname
@@ -314,4 +311,19 @@ async function logout() {
   // Reload trang để reset UI
   window.location.reload();
 }
+
+// CHARGE NOW BUTTON – BẢN HOÀN HẢO CUỐI CÙNG, KHÔNG THỂ LỖI NỮA!
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('chargeNowBtn');
+  btn.addEventListener('click', () => {
+    const token = localStorage.getItem('jwtToken');
+
+    if (token) {
+      window.location.href = 'user.html';
+    } else {
+      // CHƯA ĐĂNG NHẬP → hiện alert + mở modal
+      alert('Bạn cần đăng nhập để sạc xe!');
+    }
+  });
+});
 //localStorage.clear();
