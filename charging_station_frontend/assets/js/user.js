@@ -26,7 +26,7 @@ const API_BASE = "http://localhost:8080";
 if (!token || isTokenExpired(token)) {
     handleLogout(); // token hết hạn → logout
 } else {
-    fetch('http://localhost:8080/profile', {
+    fetch(`${API_BASE}/profile`, {
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         mode: 'cors'
@@ -57,12 +57,6 @@ if (!token || isTokenExpired(token)) {
         handleLogout();
     });
 }
-
-// ===================== MỞ KẾT NỐI WEBSOCKET ==================================
-        const socket = new SockJS(`${API_BASE}/ws`); 
-        const stompClient = Stomp.over(socket);
-        stompClient.debug = null;
-
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginHeaderBtn = document.getElementById('loginBtn');
@@ -613,22 +607,140 @@ let billId = null;
 
 const chargingStateBtn = document.getElementById("chargingActionBtn");
 const paymentBtn = document.getElementById("paymentBtn");
+chargingStateBtn.classList.add("disabled");
+chargingStateBtn.disabled = true;
 
-// Kết nối STOMP
-stompClient.connect({}, function(frame) {
-    const userId = localStorage.getItem('userId');
+let stompClient = null;         
+let isSocketConnected = false;  
 
-    // Nhận thông tin charger + biển số từ server
-    stompClient.subscribe('/topic/charger/' + userId, function(message) {
-        const data = JSON.parse(message.body);
+function connectWebSocket() {
+    if (isSocketConnected || stompClient) return;
 
-        if (data.chargerId && data.identifier) {
-            chargerId = data.chargerId;
-            identifier = data.identifier;
-            console.log('Charger info:', chargerId, identifier);
-        }
+    const socket = new SockJS(`${API_BASE}/ws`);
+    stompClient = Stomp.over(socket);
+    stompClient.debug = null;
+
+    stompClient.connect({}, function(frame) {
+        isSocketConnected = true;
+        const userId = localStorage.getItem('userId');
+
+        // Thông báo thiếu tiền
+        stompClient.subscribe('/topic/notifications/' + userId, async function(msg) {
+            const data = JSON.parse(msg.body);
+            alert(data.type);
+            billId = data.billId;
+            localStorage.setItem('billId', billId);
+            chargingState = "continue";
+            updateChargingUI();
+            resetRealtimeChart();
+            chargingStateBtn.classList.remove("enabled");
+            chargingStateBtn.classList.add("disabled");
+            chargingStateBtn.disabled = true;
+            const latestBill = await fetchLatestBill(billId);
+            disconnectWebSocket();
+            if (latestBill) {
+                currentBillData = latestBill;
+                showBillModal(latestBill);
+            }
+        });
+
+        stompClient.subscribe('/topic/log/' + billId, function(message) {
+            const logData = JSON.parse(message.body);
+
+            if (!chart) {
+                initRealtimeChart();
+            }
+            updateRealtimeChart(
+                (logData.voltage || 0),  // Chuyển V → kV
+                logData.current || 0           // A
+            );
+            console.log('Realtime log:', logData); 
+
+            const batteryEl = document.getElementById('batteryPercentage');
+            if (batteryEl) {
+                const percent = logData.percenatge !== undefined ? logData.percenatge : (logData.percentage || 0);
+                batteryEl.textContent = percent + ' %';
+            }
+
+            const timeEl = document.getElementById('time');
+            if (timeEl && logData.time !== undefined) {
+                const totalMinutes = logData.time * 60;
+                const h = Math.floor(totalMinutes / 60);
+                const m = Math.floor(totalMinutes % 60);
+                const s = Math.floor((totalMinutes % 1) * 60);
+                timeEl.textContent = `${h}h ${m}m ${s}s`;
+            }
+
+            const voltageEl = document.getElementById('voltageValue');
+            if (voltageEl) voltageEl.textContent = (logData.voltage || 0) + ' V';
+
+            const currentEl = document.getElementById('currentValue');
+            if (currentEl) currentEl.textContent = (logData.current || 0) + ' A';
+
+            const totalEl = document.getElementById('totalCharger');
+            if (totalEl) totalEl.textContent = (logData.totalCharger || 0) + ' kWh';
+
+            const totalE2 = document.getElementById('totalCharger1');
+            if (totalE2) totalE2.textContent = (logData.totalCharger || 0) + ' kWh';
+
+            const costEl = document.getElementById('totalCost');
+            if (costEl) costEl.textContent = formatVND(logData.amount);
+
+            const priceEl = document.getElementById('price');
+            if (priceEl) priceEl.textContent = (formatVND(logData.price) || 0.09);
+
+            const batteryLevel = document.querySelector('.battery-level');
+            
+            if (batteryLevel) {
+                const percent = Math.min(100, Math.max(0, 
+                    logData.percenatge !== undefined ? logData.percenatge : (logData.percentage || 0)
+                ));
+                batteryLevel.style.height = percent + '%';
+                // Đổi màu theo mức pin
+                batteryLevel.classList.remove('warning', 'danger');
+                if (percent <= 20) {
+                    batteryLevel.classList.add('danger');
+                } else if (percent <= 50) {
+                    batteryLevel.classList.add('warning');
+                }
+            }
+        });
     });
-});
+}
+
+function disconnectWebSocket() {
+    if (stompClient && isSocketConnected) {
+        stompClient.disconnect();
+        stompClient = null;
+        isSocketConnected = false;
+    }
+    resetRealtimeChart();
+}
+
+async function checkForNewBill() {
+    try {
+        const res = await fetch(`${API_BASE}/bills/new`, { 
+            headers: { 'Authorization': 'Bearer ' + token } 
+        });
+        if (res.ok) {
+            const data = await res.json();
+            billId = data.id;
+            localStorage.setItem('billId', billId);
+            chargingStateBtn.classList.remove("disabled");
+            chargingStateBtn.classList.add("enabled");
+            chargingStateBtn.disabled = false;
+        } else {
+            alert("Chưa nhận thông tin trạm sạc. Vui lòng chờ...");
+            chargingStateBtn.classList.add("disabled");
+            chargingStateBtn.classList.remove("enabled");
+            chargingStateBtn.disabled = true;
+        }
+    } catch (err) {
+        alert("Vui lòng kết nối lại xe với trạm sạc...");
+        chargingStateBtn.classList.add("disabled");
+        chargingStateBtn.disabled = true;
+    }
+}
 
 // Cập nhật giao diện nút
 function updateChargingUI() {
@@ -649,16 +761,16 @@ function updateChargingUI() {
 
 // XỬ LÝ NHẤN NÚT CHÍNH
 chargingStateBtn.addEventListener("click", async () => {
-    if (!chargerId || !identifier) {
-        alert("Chưa nhận thông tin trạm sạc. Vui lòng chờ...");
-        return;
-    }
-    const token = localStorage.getItem('jwtToken');
     // 1. START CHARGING
     if (chargingState === "start") {
+        billId = localStorage.getItem('billId');
+        if (!billId) {
+            alert("Không tìm thấy bill đang sạc!");
+            return;
+        }
         try {
-            const response = await fetch(`http://localhost:8080/bills/make/${chargerId}/${identifier}`, {
-                method: 'POST',
+            const response = await fetch(`${API_BASE}/bills/start/${billId}`, {
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + token
@@ -666,77 +778,13 @@ chargingStateBtn.addEventListener("click", async () => {
                 mode: 'cors'
             });
             if (!response.ok) {
-                const text = await response.text();
-                alert('Tạo bill thất bại: ' + response.status);
+                const data = await response.json(); // parse JSON
+                alert(data.message || "Lỗi: " + response.status);
                 return;
             }
-            const result = await response.json();
-            billId = result.id;
-            localStorage.setItem('billId', billId);
+            connectWebSocket();   // mở socket ngay khi bắt đầu sạc
             chargingState = "stop";
             updateChargingUI();
-            // Subscribe realtime log
-            stompClient.subscribe('/topic/log/' + billId, function(message) {
-                const logData = JSON.parse(message.body);
-
-                if (!chart) {
-                    initRealtimeChart();
-                }
-                updateRealtimeChart(
-                    (logData.voltage || 0),  // Chuyển V → kV
-                    logData.current || 0           // A
-                );
-                console.log('Realtime log:', logData); 
-
-                const batteryEl = document.getElementById('batteryPercentage');
-                if (batteryEl) {
-                    const percent = logData.percenatge !== undefined ? logData.percenatge : (logData.percentage || 0);
-                    batteryEl.textContent = percent + ' %';
-                }
-
-                const timeEl = document.getElementById('time');
-                if (timeEl && logData.time !== undefined) {
-                    const totalMinutes = logData.time * 60;
-                    const h = Math.floor(totalMinutes / 60);
-                    const m = Math.floor(totalMinutes % 60);
-                    const s = Math.floor((totalMinutes % 1) * 60);
-                    timeEl.textContent = `${h}h ${m}m ${s}s`;
-                }
-
-                const voltageEl = document.getElementById('voltageValue');
-                if (voltageEl) voltageEl.textContent = (logData.voltage || 0) + ' V';
-
-                const currentEl = document.getElementById('currentValue');
-                if (currentEl) currentEl.textContent = (logData.current || 0) + ' A';
-
-                const totalEl = document.getElementById('totalCharger');
-                if (totalEl) totalEl.textContent = (logData.totalCharger || 0) + ' kWh';
-
-                const totalE2 = document.getElementById('totalCharger1');
-                if (totalE2) totalE2.textContent = (logData.totalCharger || 0) + ' kWh';
-
-                const costEl = document.getElementById('totalCost');
-                if (costEl) costEl.textContent = formatVND(logData.amount);
-
-                const priceEl = document.getElementById('price');
-                if (priceEl) priceEl.textContent = (formatVND(logData.price) || 0.09);
-
-                const batteryLevel = document.querySelector('.battery-level');
-                
-                if (batteryLevel) {
-                  const percent = Math.min(100, Math.max(0, 
-                      logData.percenatge !== undefined ? logData.percenatge : (logData.percentage || 0)
-                  ));
-                  batteryLevel.style.height = percent + '%';
-                  // Đổi màu theo mức pin
-                  batteryLevel.classList.remove('warning', 'danger');
-                  if (percent <= 20) {
-                      batteryLevel.classList.add('danger');
-                  } else if (percent <= 50) {
-                      batteryLevel.classList.add('warning');
-                  }
-                }
-            });
         } catch (err) {
             console.error(err);
             alert("Lỗi kết nối server");
@@ -751,7 +799,7 @@ chargingStateBtn.addEventListener("click", async () => {
             return;
         }
         try {
-            const response = await fetch(`http://localhost:8080/bills/pause/${billId}`, {
+            const response = await fetch(`${API_BASE}/bills/pause/${billId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': 'Bearer ' + token,
@@ -761,6 +809,7 @@ chargingStateBtn.addEventListener("click", async () => {
             });
 
             if (response.ok) {
+                disconnectWebSocket();   // đóng socket khi dừng
                 const latestBill = await fetchLatestBill(billId);
                 if (latestBill) {
                     currentBillData = latestBill;
@@ -779,8 +828,13 @@ chargingStateBtn.addEventListener("click", async () => {
 
     // 3. CONTINUE CHARGING → GỌI API RESUME
     else if (chargingState === "continue") {
+        billId = localStorage.getItem('billId');
+        if (!billId) {
+            alert("Không tìm thấy bill đang sạc!");
+            return;
+        }
         try {
-            const response = await fetch(`http://localhost:8080/bills/continue/${billId}`, {
+            const response = await fetch(`${API_BASE}/bills/start/${billId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': 'Bearer ' + token,
@@ -789,6 +843,7 @@ chargingStateBtn.addEventListener("click", async () => {
                 mode: 'cors'
             });
             if (response.ok) {
+                connectWebSocket();   // mở lại socket khi tiếp tục sạc
                 chargingState = "stop";
                 updateChargingUI();
             }
@@ -798,7 +853,7 @@ chargingStateBtn.addEventListener("click", async () => {
     }
 });
 
-/* ===================== REALTIME CHART – ĐỈNH CAO CÔNG NGHỆ ===================== */
+/* ===================== REALTIME CHART===================== */
 let chart = null;
 const MAX_DATA_POINTS = 50; // chỉ giữ 50 điểm gần nhất → mượt
 const labels = [];
@@ -937,6 +992,8 @@ function resetRealtimeChart() {
 // Khởi động UI
 updateChargingUI();
 
+checkForNewBill();
+
 let currentBillData = null;
 
 // Hàm định dạng thời gian
@@ -1073,7 +1130,7 @@ function initGoogleMap() {
 async function loadManagerLocations() {
     try {
         const token = localStorage.getItem('jwtToken');
-        const res = await fetch('http://localhost:8080/charger/map-locations', {
+        const res = await fetch(`${API_BASE}/charger/map-locations`, {
             headers: { 'Authorization': 'Bearer ' + token }
         });
 
@@ -1104,7 +1161,7 @@ async function loadManagerLocations() {
                 infoWindows.forEach(iw => iw.close());
                 infoWindows = [];
                 try {
-                    const detailRes = await fetch(`http://localhost:8080/charger/manager/${loc.managerId}`, {
+                    const detailRes = await fetch(`${API_BASE}/charger/manager/${loc.managerId}`, {
                         headers: { 'Authorization': 'Bearer ' + token }
                     });
 
@@ -1377,44 +1434,95 @@ finishBtn.addEventListener('click', async () => {
         alert("Lỗi kết nối server");
     }
 });
-console.log(token);
+
 // TẢI LỊCH SỬ GIAO DỊCH
+const ITEMS_PER_PAGE = 3; // số bill mỗi trang
+let currentPage = 1;
+let billsData = []; // lưu toàn bộ bill
+
+// Hiển thị một trang bill
+function renderBillPage(page) {
+    const container = document.querySelector('.history-list');
+    container.innerHTML = "";
+
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    const pageItems = billsData.slice(start, end);
+
+    if (pageItems.length === 0) {
+        container.innerHTML = "<p style='text-align:center; color:#999;'>Chưa có giao dịch nào</p>";
+        return;
+    }
+
+    pageItems.forEach(bill => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.dataset.billId = bill.id;
+        div.dataset.billType = bill.billType;
+
+        div.innerHTML = `
+            <span>${bill.userName || bill.cardHolderName || "Bạn"}</span>
+            <span>${bill.id}</span>
+            <span>${bill.description}</span>
+            <span>${formatVND(bill.amount)}</span>
+            <span>${new Date(bill.paidAt).toLocaleDateString('vi-VN')}</span>
+            <span id="billdetail"><i class="fa-solid fa-eye"></i></span>
+        `;
+        container.appendChild(div);
+    });
+
+    renderPagination();
+}
+
+// Tạo phân trang
+function renderPagination() {
+    const pagination = document.getElementById('billPagination');
+    pagination.innerHTML = "";
+    const totalPages = Math.ceil(billsData.length / ITEMS_PER_PAGE);
+    if (totalPages <= 1) return;
+
+    // nút Previous
+    const prev = document.createElement('button');
+    prev.textContent = "<";
+    prev.disabled = currentPage === 1;
+    prev.onclick = () => { currentPage--; renderBillPage(currentPage); };
+    pagination.appendChild(prev);
+
+    // xác định khoảng trang hiển thị
+    let startPage = Math.max(1, currentPage - 1);
+    let endPage = Math.min(totalPages, currentPage + 1);
+    if (currentPage === 1) endPage = Math.min(totalPages, 3);
+    if (currentPage === totalPages) startPage = Math.max(1, totalPages - 2);
+
+    for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === currentPage) btn.classList.add('active');
+        btn.onclick = () => { currentPage = i; renderBillPage(currentPage); };
+        pagination.appendChild(btn);
+    }
+
+    // nút Next
+    const next = document.createElement('button');
+    next.textContent = ">";
+    next.disabled = currentPage === totalPages;
+    next.onclick = () => { currentPage++; renderBillPage(currentPage); };
+    pagination.appendChild(next);
+}
+
+// Hàm tải toàn bộ lịch sử bill
 async function loadHistoryBills() {
     try {
         const res = await fetch(`${API_BASE}/bills/all/user`, { 
             headers: { 'Authorization': 'Bearer ' + token } 
         });
         if (!res.ok) throw new Error();
-        const bills = await res.json();
+        billsData = await res.json();
+        currentPage = 1;
+        renderBillPage(currentPage);
 
+        // Lắng nghe click vào biểu tượng mắt để xem chi tiết bill
         const container = document.querySelector('.history-list');
-        container.innerHTML = "";
-
-        if (bills.length === 0) {
-            container.innerHTML = "<p style='text-align:center; color:#999;'>Chưa có giao dịch nào</p>";
-            return;
-        }
-
-        bills.forEach(bill => {
-            const div = document.createElement('div');
-            div.className = 'history-item';
-            div.dataset.billId = bill.id; // lưu ID để click xem chi tiết
-            div.dataset.billType = bill.billType; // lưu loại bill
-            const typeText = bill.billType === 'ELECTRIC' ? 'Sạc điện' : 'Ngân hàng';
-            const color = bill.billType === 'ELECTRIC' ? '#2e7d32' : '#d32f2f';
-
-            div.innerHTML = `
-                <span>${bill.userName || bill.cardHolderName || "Bạn"}</span>
-                <span>${bill.id}</span>
-                <span>${bill.description}</span>
-                <span>${formatVND(bill.amount)}</span>
-                <span>${new Date(bill.paidAt).toLocaleDateString('vi-VN')}</span>
-                <span id="billdetail"><i class="fa-solid fa-eye"></i></span>
-            `;
-            container.appendChild(div);
-        });
-
-        // LẮNG NGHE CLICK VÀO MẮT XEM CHI TIẾT
         container.addEventListener('click', async (e) => {
             const eye = e.target.closest('#billdetail');
             if (!eye) return;
@@ -1422,8 +1530,6 @@ async function loadHistoryBills() {
             const billItem = eye.closest('.history-item');
             const billId = billItem.dataset.billId;
             const billType = billItem.dataset.billType;
-            console.log(billId);
-            console.log(billType);
             await showBillDetail(billId, billType);
         });
 
@@ -1432,6 +1538,9 @@ async function loadHistoryBills() {
         document.querySelector('.history-list').innerHTML = "<p style='color:red;'>Lỗi tải lịch sử giao dịch</p>";
     }
 }
+
+// Gọi loadHistoryBills khi trang load xong
+window.addEventListener('DOMContentLoaded', loadHistoryBills);
 
 // ĐỊNH DẠNG THỜI GIAN SẠC: 
 function formatChargingTime(hours) {
@@ -1568,4 +1677,45 @@ walletBtn?.addEventListener("click", () => {
         loadLinkedAccounts();
     }, 100);
 });
+
+function renderCommonPagination(totalItems, pageSize, currentPage, containerId, changePageCallback) {
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const container = document.getElementById(containerId);
+
+  // Nếu ít hơn 2 trang hoặc không có dữ liệu → ẩn phân trang
+  if (totalPages <= 1 || totalItems === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  let html = `<button onclick="${changePageCallback.name}(${currentPage - 1})" 
+                     ${currentPage === 1 ? 'disabled' : ''}>
+                <i class="fas fa-chevron-left"></i>
+              </button>`;
+
+  const startPage = Math.max(1, currentPage - 3);
+  const endPage   = Math.min(totalPages, currentPage + 3);
+
+  if (startPage > 1) {
+    html += `<button onclick="${changePageCallback.name}(1)">1</button>`;
+    if (startPage > 2) html += `<span>...</span>`;
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    html += `<button onclick="${changePageCallback.name}(${i})" 
+                     ${i === currentPage ? 'class="active"' : ''}>${i}</button>`;
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) html += `<span>...</span>`;
+    html += `<button onclick="${changePageCallback.name}(${totalPages})">${totalPages}</button>`;
+  }
+
+  html += `<button onclick="${changePageCallback.name}(${currentPage + 1})" 
+                   ${currentPage === totalPages ? 'disabled' : ''}>
+             <i class="fas fa-chevron-right"></i>
+           </button>`;
+
+  container.innerHTML = html;
+}
 //localStorage.clear();

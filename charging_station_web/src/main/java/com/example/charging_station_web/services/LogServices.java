@@ -12,12 +12,12 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import com.example.charging_station_web.dto.CatchEvent;
 import com.example.charging_station_web.entities.Bills;
 import com.example.charging_station_web.entities.Price;
 import com.example.charging_station_web.entities.Users;
 import com.example.charging_station_web.entities.ChargingLog;
 import com.example.charging_station_web.entities.MqttData;
-import com.example.charging_station_web.entities.OverAmountEvent;
 import com.example.charging_station_web.repositories.LogRepositories;
 
 @Service
@@ -61,7 +61,11 @@ public class LogServices {
         Double amount = totalCharger * p.getPrice() + cost;
         
         if((user.getBalance() - amount) < p.getPrice() * 4){
-            applicationEventPublisher.publishEvent(new OverAmountEvent(bill.getId()));
+            applicationEventPublisher.publishEvent(new CatchEvent(bill.getId(), "Insufficient Balance"));
+        }
+
+        if(percenatge >= 99.9){
+            applicationEventPublisher.publishEvent(new CatchEvent(bill.getId(), "fully charged"));
         }
 
         if(lastTime == null){

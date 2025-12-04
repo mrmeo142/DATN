@@ -7,9 +7,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
+
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 
+import com.example.charging_station_web.dto.CatchEvent;
 import com.example.charging_station_web.entities.Bills;
 import com.example.charging_station_web.entities.Users;
 
@@ -32,7 +35,14 @@ public class BillSchedulerServices {
     // Map để quản lý task theo billId
     private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 
-    // Lập lịch auto-payment sau 10 phút
+    @EventListener
+    public void handleOverAmountEvent(CatchEvent event) {
+        String billId = event.getBillId();
+        cancelScheduledPayment(billId);
+        scheduleAutoPayment(billId);
+        System.out.println("OverAmountEvent received, bill " + billId + " scheduled for payment.");
+    }
+    // Lập lịch auto-payment
     public void scheduleAutoPayment(String billId) {
 
         // Huỷ task cũ nếu đã có
@@ -41,7 +51,7 @@ public class BillSchedulerServices {
             oldTask.cancel(false);
         }
 
-        // Lên lịch 15 phút sau
+        // Lên lịch
         ScheduledFuture<?> future = taskScheduler.schedule(() -> {
             Bills bill = billServices.findBillById(billId);
 

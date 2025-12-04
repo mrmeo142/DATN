@@ -33,6 +33,7 @@ public class Bills {
     private String action;
     private String userName;
     private String submitType;
+    private String stopReason;
     private ArrayList<Session> timeUse = new ArrayList<>();
     
     // BANK

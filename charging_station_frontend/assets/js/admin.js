@@ -27,7 +27,7 @@ console.log(token);
 if (!token || isTokenExpired(token)) {
     handleLogout(); // token hết hạn → logout
 } else {
-    fetch('http://localhost:8080/profile', {
+    fetch(`${API_BASE}/profile`, {
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         mode: 'cors'
@@ -928,8 +928,8 @@ async function renderPromotionTable() {
   // Lấy fullname an toàn
   const userPromises = pageData.map(async (p) => {
     try {
-      const r = await fetch(`http://localhost:8080/profile/${p.userId}`, {
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwtToken') }
+      const r = await fetch(`${API_BASE}/profile/${p.userId}`, {
+        headers: { 'Authorization': 'Bearer ' + token }
       });
       if (r.ok) return await r.json();
       return { fullname: 'User đã xóa' };

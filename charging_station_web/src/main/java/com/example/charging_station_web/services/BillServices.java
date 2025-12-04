@@ -2,20 +2,23 @@ package com.example.charging_station_web.services;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.context.event.EventListener;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.example.charging_station_web.entities.Bills;
 import com.example.charging_station_web.entities.Chargers;
 import com.example.charging_station_web.entities.ChargingLog;
-import com.example.charging_station_web.entities.OverAmountEvent;
 import com.example.charging_station_web.entities.Session;
 import com.example.charging_station_web.repositories.AccountRepositories;
 import com.example.charging_station_web.repositories.BillsRepositories;
 import com.example.charging_station_web.repositories.ChargerRepositories;
 import com.example.charging_station_web.repositories.LogRepositories;
 import com.example.charging_station_web.repositories.UsersRepositories;
+import com.example.charging_station_web.dto.CatchEvent;
 import com.example.charging_station_web.entities.BankAccount;
 import com.example.charging_station_web.entities.BillType;
 import com.example.charging_station_web.entities.Users;
@@ -23,7 +26,6 @@ import com.example.charging_station_web.entities.Users;
 @Service
 public class BillServices {
 
-    //private final BankAccountControllers bankAccountControllers;
     private final BillsRepositories billsReponsitories;
     private final AccountRepositories accountRepositories;
     private final ChargerRepositories chargerRepositories;
@@ -31,12 +33,12 @@ public class BillServices {
     private final MQTTService  mqttService; 
     private final LogRepositories logRepositories;
     private final PriceServices priceServices;
-
+    private final SimpMessagingTemplate messagingTemplate;
     
     public BillServices(BillsRepositories billsReponsitories, AccountRepositories accountRepositories, 
                         ChargerRepositories chargerRepositories, UsersRepositories userRepositories, 
                         MQTTService  mqttService, LogRepositories logRepositories, 
-                        PriceServices priceServices) {
+                        PriceServices priceServices, SimpMessagingTemplate messagingTemplate) {
         this.billsReponsitories = billsReponsitories;
         this.accountRepositories = accountRepositories;
         this.chargerRepositories = chargerRepositories;
@@ -44,6 +46,7 @@ public class BillServices {
         this.mqttService = mqttService;
         this.logRepositories = logRepositories;
         this.priceServices = priceServices;
+        this.messagingTemplate = messagingTemplate;
     }
 
     // -----------------------------------------------bank Bill--------------------------------------------
@@ -114,39 +117,57 @@ public class BillServices {
 
     // ------------------------------------Electricity Bill--------------------------------------------
 
-    // ceate electricity bill
-    public Bills createElecBill(String userId, String chargerId, String vehicleId, String submit) {
+    // get current draft bill for user (done)
+    public Bills getCurrentDraftBill(String userId) {
+        return billsReponsitories.findByUserIdAndAction(userId, "new")
+                .orElse(null);
+    }
+
+    // ceate electricity bill (done)
+    public Bills createElecBill(String userId, String chargerId, String vehicleId) {
         Bills bill = new Bills();
         Chargers charger = chargerRepositories.findById(chargerId)
             .orElseThrow(() -> new RuntimeException("Charger not found"));
-        charger.setStatus("ACTIVE");
-        chargerRepositories.save(charger);
         Users user = userRepositories.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         bill.setAmount(0.0);
         bill.setUserId(userId);
         bill.setManagerId(charger.getMngId());
         bill.setChargerId(chargerId);
-        bill.setCreatedAt(LocalDateTime.now());
-        bill.setAction("Charging");
         bill.setDescription("Electricity Bill");
         bill.setPaid(false);
         bill.setBillType(BillType.ElECTRIC);
+        bill.setAction("new");
         bill.setUserName(user.getFullname());
-        bill.setSubmitType(submit);
         bill.setVehicleId(vehicleId);
-        Bills b = billsReponsitories.save(bill);
-        String billid = b.getId();
-        mqttService.publishToDevice(chargerId, billid, submit );
-        return b;
+        return billsReponsitories.save(bill);
+    }
+
+    // start electricity bill
+    public Bills startElecBill(String billId, String submit) {
+        Bills bill = billsReponsitories.findById(billId)
+                        .orElseThrow(() -> new RuntimeException("Bill not found"));
+        mqttService.publishToDevice(bill.getChargerId(), billId, submit);
+        Chargers charger = chargerRepositories.findById(bill.getChargerId())
+            .orElseThrow(() -> new RuntimeException("Charger not found"));
+        charger.setStatus("ACTIVE");
+        chargerRepositories.save(charger);
+        bill.setCreatedAt(LocalDateTime.now());
+        bill.setAction("Charging");
+        bill.setSubmitType(submit);
+        return billsReponsitories.save(bill);
     }
 
     // pause electricity bill
-    public Bills pauseElecBill(String billId, String chargerId, String submit) {
-        mqttService.publishToDevice(chargerId, billId, submit);
-        Double price = priceServices.getPrice().getPrice();
+    public Bills pauseElecBill(String billId, String submit) {
         Bills bill = billsReponsitories.findById(billId)
-                        .orElseThrow(() -> new RuntimeException("Bill not found"));;
+                        .orElseThrow(() -> new RuntimeException("Bill not found"));
+        mqttService.publishToDevice(bill.getChargerId(), billId, submit);
+        Chargers charger = chargerRepositories.findById(bill.getChargerId())
+                        .orElseThrow(() -> new RuntimeException("Charger not found"));
+        charger.setStatus("OFF");
+        chargerRepositories.save(charger);
+        Double price = priceServices.getPrice().getPrice();            
         List<ChargingLog> logs =  logRepositories.findByBillId(billId);
         Double v = 0.0, i = 0.0;
         LocalDateTime pause = null;
@@ -165,17 +186,6 @@ public class BillServices {
         bill.setAction("Stop");
         bill.addSession(s);
         bill.setPauseAt(pause);
-        bill.setSubmitType(submit);
-        return billsReponsitories.save(bill);
-    }
-
-    // continue electicity bill
-    public Bills continueElecBill(String billId, String chargerId, String submit) {
-        mqttService.publishToDevice(chargerId, billId, submit);
-        Bills bill = billsReponsitories.findById(billId)
-                        .orElseThrow(() -> new RuntimeException("Bill not found"));
-        bill.setCreatedAt(LocalDateTime.now());
-        bill.setAction("Charging");
         bill.setSubmitType(submit);
         return billsReponsitories.save(bill);
     }
@@ -207,13 +217,41 @@ public class BillServices {
     }
 
     @EventListener
-    public void handleOverAmountEvent(OverAmountEvent event) {
+    @Async
+    public void handleOverAmountEvent(CatchEvent event) {
         String billId = event.getBillId();
         Bills bill = billsReponsitories.findById(billId)
                         .orElseThrow(() -> new RuntimeException("Bill not found"));
         mqttService.publishToDevice(bill.getChargerId(), billId, "OFF");
-        System.out.println("Insufficient balance = " + bill.getUserId());
-        //socketService.notifyUser(bill.getUserId(), "Insufficient balance");
+        Double price = priceServices.getPrice().getPrice();
+        List<ChargingLog> logs =  logRepositories.findByBillId(billId);
+        Double v = 0.0, i = 0.0;
+        LocalDateTime pause = null;
+        for(ChargingLog chg : logs){
+            v += chg.getVoltage();
+            i += chg.getCurrent();
+            pause = chg.getTimestamp();
+        }
+        v = v/logs.size();
+        i = i/logs.size();
+        Session s = new Session(bill.getCreatedAt(), pause);
+        Double delta = s.getDuration();
+        Double cost = v * i * delta * price;
+        Double amount = bill.getAmount();
+        bill.setAmount(amount + Math.abs(cost));
+        bill.setAction("Stop");
+        bill.addSession(s);
+        bill.setPauseAt(pause);
+        bill.setStopReason(event.getReason());
+        bill.setSubmitType("OFF");
+        billsReponsitories.save(bill);
+        messagingTemplate.convertAndSend(
+        "/topic/notifications/" + bill.getUserId(),
+            Map.of(
+                "type", event.getReason(),
+                "billId", bill.getId()
+            )
+        );
     }
 
 }

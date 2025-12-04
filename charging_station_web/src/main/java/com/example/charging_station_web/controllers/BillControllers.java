@@ -9,7 +9,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.example.charging_station_web.entities.Users;
-import com.example.charging_station_web.entities.Vehicles;
 import com.example.charging_station_web.config.JwtUtil;
 import com.example.charging_station_web.entities.BankAccount;
 import com.example.charging_station_web.entities.Bills;
@@ -19,7 +18,6 @@ import com.example.charging_station_web.services.BankAccountServices;
 import com.example.charging_station_web.services.BillSchedulerServices;
 import com.example.charging_station_web.services.BillServices;
 import com.example.charging_station_web.services.EmailService;
-import com.example.charging_station_web.services.MQTTService;
 import com.example.charging_station_web.services.PriceServices;
 import com.example.charging_station_web.services.UserServices;
 
@@ -46,19 +44,16 @@ public class BillControllers {
     private final PriceServices priceServices;
     private final BillSchedulerServices billSchedulerServices;
     private final EmailService emailService;
-    private final MQTTService mqttService;
 
     public BillControllers(BillServices billServices, UserServices userServices,
                            BankAccountServices bankAccountServices, PriceServices priceServices,
-                            BillSchedulerServices billSchedulerServices, EmailService emailService,
-                            MQTTService mqttService) {
+                            BillSchedulerServices billSchedulerServices, EmailService emailService) {
         this.billServices = billServices;
         this.userServices = userServices;
         this.bankAccountServices = bankAccountServices;
         this.priceServices = priceServices;
         this.billSchedulerServices = billSchedulerServices;
         this.emailService = emailService;
-        this.mqttService = mqttService;
     }
 
     // lay user qua email tu tocken (done)
@@ -230,33 +225,24 @@ public class BillControllers {
         }
     }
 
-    // create electricity bill
-    @PostMapping("/make/{chargerId}/{identifier}")
-    public ResponseEntity<?> createElectricityBill(
-            HttpServletRequest request,
-            @PathVariable String chargerId,
-            @PathVariable String identifier) {
+    // get new bill (done)
+    @GetMapping("/new")
+    public ResponseEntity<?> getNewBillUser(HttpServletRequest request) {
         try{
             Users currentUser = getUserFromToken(request);
-            Vehicles vehicle = userServices.getVehicleByIdentifier(identifier);
-            if (!currentUser.getId().equals(vehicle.getUserId())) {
-                mqttService.sendCaptureCommand(chargerId, "capture");
+            if (currentUser.getRole() == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "User not found"));
             }
-            Price newPrice = priceServices.getPrice();
-            if(currentUser.getBalance() < newPrice.getPrice() * 4){
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("message", "Insufficient balance"));
+            Bills draftBill = billServices.getCurrentDraftBill(currentUser.getId());
+            if (draftBill == null) {
+                return ResponseEntity.ok(null); 
             }
-            String vehicleId = vehicle.getId();
-            String payload = "ON";
-            Bills b = billServices.createElecBill(currentUser.getId(), chargerId, vehicleId, payload);
-            return ResponseEntity.ok(b);
+            return ResponseEntity.ok(draftBill);
         }
         catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", e.getMessage()));
+                    .body(Map.of("message", "Bill not found"));
         }
     }
 
@@ -264,21 +250,20 @@ public class BillControllers {
     @PutMapping("/pause/{billId}")
     public ResponseEntity<?> pauseElectricityBill(@PathVariable String billId, HttpServletRequest request) {
         Users currentUser = getUserFromToken(request);
-        if (currentUser.getRole() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User not found"));
-        }
         Bills existingBill = billServices.findBillById(billId);
-        String chargerId = existingBill.getChargerId();
+        if (!currentUser.getId().equals(existingBill.getUserId())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "User not found"));
+        }
         String payload = "OFF";
-        Bills b = billServices.pauseElecBill(billId, chargerId, payload);
+        Bills b = billServices.pauseElecBill(billId, payload);
         billSchedulerServices.scheduleAutoPayment(billId);
         return ResponseEntity.ok(b);
     }
 
-    // continue electricity bill
-    @PutMapping("/continue/{billId}")
-    public ResponseEntity<?> continueElectricityBill(@PathVariable String billId, HttpServletRequest request) {
+    // start electricity bill
+    @PutMapping("/start/{billId}")
+    public ResponseEntity<?> startElectricityBill(@PathVariable String billId, HttpServletRequest request) {
         try{
             Users currentUser = getUserFromToken(request);
             Bills existingBill = billServices.findBillById(billId);
@@ -291,9 +276,8 @@ public class BillControllers {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("message", "Insufficient balance"));
             }
-            String chargerId = existingBill.getChargerId();
             String payload = "ON";
-            Bills b = billServices.continueElecBill(billId, chargerId, payload);
+            Bills b = billServices.startElecBill(billId, payload);
             billSchedulerServices.cancelScheduledPayment(billId);
             return ResponseEntity.ok(b);
         }

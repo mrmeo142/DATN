@@ -1,5 +1,6 @@
 package com.example.charging_station_web.controllers;
 
+import com.example.charging_station_web.services.BillServices;
 import com.example.charging_station_web.services.MQTTService;
 import com.example.charging_station_web.services.UserServices;
 import com.example.charging_station_web.entities.Vehicles;
@@ -10,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +28,7 @@ import java.util.Map;
 public class UploadController {
 
     @Autowired
-    private SimpMessagingTemplate simpMessagingTemplate;
+    private BillServices billServices;
 
     @Autowired
     private MQTTService mqttService;
@@ -88,13 +88,7 @@ public class UploadController {
                 Vehicles vehicle = userServices.getVehicleByIdentifier(plate);
 
                 if (vehicle != null && vehicle.getUserId() != null) {
-                    // Gửi thông tin charger + biển số về frontend qua WebSocket
-                    Map<String, String> wsMsg = Map.of(
-                        "chargerId", chargerId,
-                        "identifier", plate
-                    );
-                    simpMessagingTemplate.convertAndSend("/topic/charger/" + vehicle.getUserId(), wsMsg);
-
+                    billServices.createElecBill(vehicle.getUserId(), chargerId, vehicle.getId());
                     response.put("success", true);
                     response.put("chargerId", chargerId);
                     response.put("plate", plate);

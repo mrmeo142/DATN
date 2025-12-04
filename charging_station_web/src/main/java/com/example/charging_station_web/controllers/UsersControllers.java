@@ -248,7 +248,7 @@ public class UsersControllers {
         try{
             Users addvehicle = getUserFromToken(request);
             if (vehicle.getIdentifier() != null) {
-                String cleanedPlate = vehicle.getIdentifier().replaceAll("[-.]", "");
+                String cleanedPlate = vehicle.getIdentifier().replaceAll("[\\s-.]", "");
                 vehicle.setIdentifier(cleanedPlate);
             }
             Users user = userServices.addVehicleToUser(addvehicle.getId(), vehicle);

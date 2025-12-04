@@ -32,6 +32,7 @@ window.addEventListener("scroll", () => {
   }
 });
 
+const API_BASE = "http://localhost:8080";
 /**
  * #SCROLL REVEAL
  */
@@ -212,7 +213,7 @@ if (signupUserForm) {
     };
 
     try {
-      const response = await fetch('http://localhost:8080/create', {
+      const response = await fetch(`${API_BASE}/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
@@ -249,7 +250,7 @@ if (loginUserForm) {
     const password = document.getElementById('loginPassword').value;
 
     try {
-      const response = await fetch('http://localhost:8080/login', {
+      const response = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -262,7 +263,7 @@ if (loginUserForm) {
         localStorage.setItem('jwtToken', token);
 
         // lấy user fullname
-        const profileResp = await fetch('http://localhost:8080/profile', {
+        const profileResp = await fetch(`${API_BASE}/profile`, {
           method: 'GET',
           headers: { 'Authorization': 'Bearer ' + token },
           mode: 'cors'
@@ -296,7 +297,7 @@ async function logout() {
   if (!token) return;
 
   try {
-    await fetch('http://localhost:8080/logout', {
+    await fetch(`${API_BASE}/logout`, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token }
     });

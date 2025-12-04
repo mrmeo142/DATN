@@ -315,6 +315,21 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
 }
+
+/* trạng thái chưa có dữ liệu → nút xám */
+.charging-btn.disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  color: #666;
+}
+
+/* trạng thái có dữ liệu → nút xanh lá */
+.charging-btn.enabled {
+  background-color: var(--primary-green);
+  cursor: pointer;
+  color: var(--bg-dark-main);
+}
+
 .payment-btn {
   width: 45%;
   padding: 1rem;
@@ -1046,3 +1061,44 @@ body {
 
 #billdetail { cursor: pointer; }
 #billdetail:hover { transform: scale(1.2); }
+
+/* Phân trang đẹp, luôn trên 1 dòng, có nút < > */
+.pagination {
+  margin-top: 15px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pagination button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.pagination button:hover {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.pagination button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.pagination button:disabled {
+  background: #eee;
+  color: #999;
+  cursor: not-allowed;
+}
