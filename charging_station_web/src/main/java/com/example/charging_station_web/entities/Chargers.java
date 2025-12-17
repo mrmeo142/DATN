@@ -15,10 +15,6 @@ public class Chargers {
     @Id
     private String id;
     private String mngId;
-    private Double voltage;
-    private Double temperature;
-    private Double percenatge;
-    private Double current;
     private String status;
     private String process;
 }

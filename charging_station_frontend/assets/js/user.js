@@ -22,7 +22,8 @@ function handleLogout() {
 
 // Lấy token từ localStorage
 const token = localStorage.getItem('jwtToken');
-const API_BASE = "http://localhost:8080";
+//const API_BASE = "http://localhost:8080";
+const API_BASE = "http://178.128.209.28:8080";
 if (!token || isTokenExpired(token)) {
     handleLogout(); // token hết hạn → logout
 } else {
@@ -449,7 +450,7 @@ const inputs = {
     address: registrationForm.querySelector('input[placeholder="Enter address"]')
 };
 
-let currentPromoteId = null; // Lưu ID yêu cầu đăng ký (nếu có)
+let currentPromoteId = null; 
 
 /* ===== TẢI THÔNG TIN NGƯỜI DÙNG + TRẠNG THÁI ĐĂNG KÝ ===== */
 async function loadRegistrationData() {
@@ -469,7 +470,7 @@ async function loadRegistrationData() {
         inputs.address.value = user.address || '';
 
         // Kiểm tra xem user đã từng gửi yêu cầu đăng ký chưa
-        if (user.identification && user.address) {
+        if (user.identification || user.address) {
             checkPromoteStatus();
         } else {
             // Chưa gửi → hiện nút Register bình thường
@@ -492,16 +493,16 @@ async function checkPromoteStatus() {
         if (!res.ok) throw new Error();
 
         const promote = await res.json();
-        const status = promote.status?.toLowerCase(); // "pending", "approved", "rejected"
+        const status = promote.status; // "pending", "approved"
 
-        if (status === "approved") {
+        if (status === "Approved") {
             setRegistrationStatus("approved");
             registerBtn.style.display = "none";
-        } else if (status === "pending") {
+        } else if (status === "Pending") {
             setRegistrationStatus("pending");
             registerBtn.style.display = "none";
         } else {
-            showRegisterButton(); // rejected hoặc lỗi → cho gửi lại
+            showRegisterButton(); 
         }
 
     } catch (err) {
@@ -521,7 +522,7 @@ function showRegisterButton() {
 function setRegistrationStatus(status) {
     statusEl.style.display = "inline-block";
     statusEl.className = "registration-status " + status;
-    statusEl.textContent = status === "approved" ? "Approved" : "Pending";
+    statusEl.textContent = status;
     registerBtn.style.display = "none";
 }
 
@@ -1031,7 +1032,6 @@ function showBillModal(bill) {
     document.getElementById('billUserName').textContent = bill.userName || "Khách lẻ";
     document.getElementById('billDescription').textContent = bill.description || "Electricity Bill";
     document.getElementById('billChargerId').textContent = bill.chargerId;
-    document.getElementById('billVehicle').textContent = identifier || "Không rõ";
 
     let totalSeconds = 0;
     const timeList = document.getElementById('billTimeList');

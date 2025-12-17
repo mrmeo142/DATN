@@ -14,5 +14,4 @@ public class Banks {
     private String id;
     // private String adminId;
     private String bankName;
-    private String avt;
 }

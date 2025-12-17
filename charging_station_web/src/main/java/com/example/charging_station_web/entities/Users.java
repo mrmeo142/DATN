@@ -16,7 +16,6 @@ import java.util.ArrayList;
 public class Users {
     @Id
     private String id;
-    private String username;
     private String fullname;
     private String email;
     private String password;

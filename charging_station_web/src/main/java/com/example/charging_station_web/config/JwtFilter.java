@@ -26,14 +26,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         final String requestURI = request.getRequestURI();
 
-        if (requestURI.startsWith("/ws/") || 
-            requestURI.equals("/login") || 
-            requestURI.startsWith("/public/")) {
+        if (requestURI.startsWith("/ws/") ||
+                requestURI.equals("/login") ||
+                requestURI.startsWith("/public/")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -46,11 +46,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7).trim();
 
-        if (token.isEmpty() 
-            || token.length() < 20 
-            || !token.contains(".") 
-            || "null".equalsIgnoreCase(token) 
-            || "undefined".equalsIgnoreCase(token)) {
+        if (token.isEmpty()
+                || token.length() < 20
+                || !token.contains(".")
+                || "null".equalsIgnoreCase(token)
+                || "undefined".equalsIgnoreCase(token)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -70,8 +70,8 @@ public class JwtFilter extends OncePerRequestFilter {
                         .authorities(Collections.emptyList())
                         .build();
 
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails,
+                        null, userDetails.getAuthorities());
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             } else {
@@ -84,7 +84,8 @@ public class JwtFilter extends OncePerRequestFilter {
             response.setStatus(401);
             response.getWriter().write("{\"message\": \"Token đã hết hạn\"}");
             return;
-        } catch (io.jsonwebtoken.MalformedJwtException | IllegalArgumentException e) {}
+        } catch (io.jsonwebtoken.MalformedJwtException | IllegalArgumentException e) {
+        }
 
         filterChain.doFilter(request, response);
     }

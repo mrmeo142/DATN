@@ -8,9 +8,10 @@
 // ===================
 // WiFi & Server config
 // ===================
-const char* ssid = "TP-LINK_30FA";
-const char* password = "minhhue77";
-const char* serverUrl = "http://192.168.0.101:8080/api/upload/";
+const char* ssid = "MINH-HIEU 6560";
+const char* password = "12341234";
+const char* serverUrl = "http://178.128.209.28:8080/api/upload/";
+//const char* serverUrl = "http://192.168.0.100:8080/api/upload/";
 const char* chargerId = "68dd48fa560a0cc198b6e1f6";
 
 // ===================
@@ -22,7 +23,8 @@ const char* chargerId = "68dd48fa560a0cc198b6e1f6";
 // ===================
 // MQTT config
 // ===================
-const char* mqtt_server = "192.168.0.101";
+const char* mqtt_server = "178.128.209.28";
+//const char* mqtt_server = "192.168.0.100";
 const int mqtt_port = 1883;
 const char* mqtt_user = "";   // nếu broker có user/pass thì thêm vào
 const char* mqtt_pass = "";

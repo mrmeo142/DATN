@@ -18,5 +18,4 @@ public class ChargingLog {
     private Double voltage;
     private Double current;
     private Double percentage;
-    private Double temperature;
 }

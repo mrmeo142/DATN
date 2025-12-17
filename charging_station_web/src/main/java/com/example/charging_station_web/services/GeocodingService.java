@@ -20,15 +20,14 @@ public LatLng getLatLngFromAddress(String address) {
     if (address == null || address.trim().isEmpty()) return null;
 
     String clean = removeVietnameseAccents(address)
-            .replaceAll("Đường|\\.", " ")     // bỏ chữ "Đường" và dấu chấm
-            .replaceAll("Phường|P\\.", " ")   // bỏ chữ "Phường" và "P."
-            .replaceAll("Quận|Q\\.", " ")     // bỏ "Quận"
+            .replaceAll("Đường|\\.", " ")     
+            .replaceAll("Phường|P\\.", " ")  
+            .replaceAll("Quận|Q\\.", " ")    
             .replaceAll("Huyện", " ")
-            .replaceAll("[^a-zA-Z0-9\\s,]", " ") // chỉ giữ chữ cái, số, dấu phẩy, khoảng trắng
+            .replaceAll("[^a-zA-Z0-9\\s,]", " ")
             .replaceAll("\\s+", " ")
             .trim();
 
-    // Đảm bảo có "Vietnam" ở cuối để Google chắc chắn
     if (!clean.toLowerCase().contains("vietnam")) {
         clean = clean + ", Vietnam";
     }
@@ -62,7 +61,6 @@ public LatLng getLatLngFromAddress(String address) {
     return null;
 }
 
-    // HÀM SIÊU ỔN ĐỊNH – KHÔNG BAO GIỜ BỊ TRÀN MẢNG
     private String removeVietnameseAccents(String str) {
         if (str == null) return null;
         String result = str;

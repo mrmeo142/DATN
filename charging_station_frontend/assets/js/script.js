@@ -32,7 +32,8 @@ window.addEventListener("scroll", () => {
   }
 });
 
-const API_BASE = "http://localhost:8080";
+//const API_BASE = "http://localhost:8080";
+const API_BASE = "http://178.128.209.28:8080";
 /**
  * #SCROLL REVEAL
  */

@@ -21,7 +21,8 @@ function handleLogout() {
 
 // Lấy token từ localStorage
 const token = localStorage.getItem('jwtToken');
-const API_BASE = "http://localhost:8080";
+//const API_BASE = "http://localhost:8080";
+const API_BASE = "http://178.128.209.28:8080";
 console.log(token);
 
 if (!token || isTokenExpired(token)) {
@@ -221,7 +222,7 @@ function renderChargerTable() {
                     <button class="charger-btn btn-view-charger" onclick="viewCharger('${charger.id}')">Xem</button>
                     <button class="charger-btn ${isMaintenance ? 'btn-off' : 'btn-maintenance'}"
                             onclick="${isMaintenance ? `setChargerOff('${charger.id}')` : `setChargerMaintenance('${charger.id}')`}">
-                        ${isMaintenance ? 'Tắt' : 'Bảo trì'}
+                        ${isMaintenance ? 'Bật' : 'Bảo trì'}
                     </button>
                 </div>
             </div>
@@ -252,7 +253,6 @@ async function viewCharger(id) {
             <p><strong>ID:</strong> <code>${c.id}</code></p>
             <p><strong>Trạng thái:</strong><code>${c.status}</code></p>
             <p><strong>Tiến trình:</strong> ${c.process || '—'}</p>
-            <p><strong>Ngày tạo:</strong> ${new Date(c.createdAt).toLocaleString('vi-VN')}</p>
         `;
         document.getElementById('chargerDetailModal').style.display = 'flex';
     } catch (err) {
@@ -405,7 +405,7 @@ async function viewBill(billId) {
       <p><strong>Khách hàng:</strong> ${bill.userName || '—'}</p>
       <p><strong>Số tiền:</strong> <strong style="color:#27ae60;font-size:20px;">${(bill.amount || 0).toLocaleString('vi-VN')} ₫</strong></p>
       <p><strong>Thời gian thanh toán:</strong> ${bill.paidAt ? new Date(bill.paidAt).toLocaleString('vi-VN') : '—'}</p>
-      <p><strong>Trạng thái:</strong> <span">${bill.paid === 'true' ? 'Chưa thanh toán' : 'Đã thanh toán'}</span></p>
+      <p><strong>Trạng thái:</strong> ${bill.paid}</p>
       <hr>
       <p><strong>Trạm sạc:</strong> ${bill.chargerId || '—'}</p>
       <p><strong>Thời lượng sạc:</strong> ${formatTotalTime(bill.totalTime)}</p>
@@ -439,7 +439,7 @@ function formatTotalTime(hoursDecimal) {
   return parts.join(' ');
 }
 
-// LỌC THEO THỜI GIAN – BẢN HOÀN HẢO, CHẠY 100% KỂ CẢ CHỌN NGÀY
+// LỌC THEO THỜI GIAN
 document.getElementById('filterTime')?.addEventListener('change', applyBillFilter);
 document.getElementById('customDate')?.addEventListener('change', applyBillFilter);
 
@@ -491,7 +491,7 @@ function applyBillFilter() {
     });
   } 
   else {
-    filteredBills = [...allBills]; // nếu chưa chọn ngày thì hiện tất cả
+    filteredBills = [...allBills]; 
   }
 
   currentBillPage = 1;

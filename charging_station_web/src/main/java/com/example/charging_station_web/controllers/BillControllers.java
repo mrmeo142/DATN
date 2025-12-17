@@ -3,9 +3,7 @@ package com.example.charging_station_web.controllers;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import com.example.charging_station_web.entities.Users;
@@ -17,7 +15,6 @@ import com.example.charging_station_web.entities.Price;
 import com.example.charging_station_web.services.BankAccountServices;
 import com.example.charging_station_web.services.BillSchedulerServices;
 import com.example.charging_station_web.services.BillServices;
-import com.example.charging_station_web.services.EmailService;
 import com.example.charging_station_web.services.PriceServices;
 import com.example.charging_station_web.services.UserServices;
 
@@ -31,9 +28,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 
-
-
-
 @RequestMapping("/bills")
 @RestController
 public class BillControllers {
@@ -43,17 +37,15 @@ public class BillControllers {
     private final BankAccountServices bankAccountServices;
     private final PriceServices priceServices;
     private final BillSchedulerServices billSchedulerServices;
-    private final EmailService emailService;
 
     public BillControllers(BillServices billServices, UserServices userServices,
-                           BankAccountServices bankAccountServices, PriceServices priceServices,
-                            BillSchedulerServices billSchedulerServices, EmailService emailService) {
+            BankAccountServices bankAccountServices, PriceServices priceServices,
+            BillSchedulerServices billSchedulerServices) {
         this.billServices = billServices;
         this.userServices = userServices;
         this.bankAccountServices = bankAccountServices;
         this.priceServices = priceServices;
         this.billSchedulerServices = billSchedulerServices;
-        this.emailService = emailService;
     }
 
     // lay user qua email tu tocken (done)
@@ -74,80 +66,59 @@ public class BillControllers {
             @RequestBody PaymentRequest paymentRequest,
             HttpServletRequest request,
             @PathVariable String bankAccountId) {
-        try{
+        try {
             Users currentUser = getUserFromToken(request);
             if (currentUser.getRole() == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "User not found"));
             }
-            
+
             BankAccount bankAccount = bankAccountServices.findBankAccountById(bankAccountId);
             Double balance = bankAccount.getBalance();
             Double amount = paymentRequest.getAmount();
             if (balance < amount) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("message", "Insufficient balance"));
-            }
-            else {
+            } else {
                 currentUser.setBalance(currentUser.getBalance() + paymentRequest.getAmount());
                 userServices.saveUsers(currentUser);
-                Bills b =  billServices.createDepositBill(currentUser.getId(), bankAccountId, paymentRequest.getAmount());
-
-                Locale vietnam = Locale.forLanguageTag("vi-VN");
-                NumberFormat formatter = NumberFormat.getCurrencyInstance(vietnam);
-                String amountVND = formatter.format(amount);
-                String subject = "THÔNG BÁO NẠP TIỀN THÀNH CÔNG";
-                String content = "Xin chào " + currentUser.getFullname() + ",\n"
-                        + "Hóa đơn: " + b.getId() + " đã được thanh toán thành công.\n"
-                        + "Số tiền: " + amountVND + ".\n"
-                        + "Cảm ơn bạn đã sử dụng dịch vụ!";
-                emailService.sendPaymentSuccessEmail(currentUser.getEmail(), subject, content);
+                Bills b = billServices.createDepositBill(currentUser.getId(), bankAccountId,
+                        paymentRequest.getAmount());
                 return ResponseEntity.ok(b);
             }
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Deposit failed"));
         }
     }
-    
+
     // withdraw (done)
     @PostMapping("/{bankAccountId}/withdraw")
     public ResponseEntity<?> withdrawBill(
             @RequestBody PaymentRequest paymentRequest,
             HttpServletRequest request,
             @PathVariable String bankAccountId) {
-        try{
+        try {
             Users currentUser = getUserFromToken(request);
             if (currentUser.getRole() == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "User not found"));
             }
-            
+
             Double balance = currentUser.getBalance();
             Double amount = paymentRequest.getAmount();
             if (balance < amount) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("message", "Insufficient balance"));
-            }
+            } 
             else {
                 currentUser.setBalance(balance - amount);
                 userServices.saveUsers(currentUser);
-                Bills b = billServices.createWithdrawBill(currentUser.getId(), bankAccountId, paymentRequest.getAmount());
-                
-                Locale vietnam = Locale.forLanguageTag("vi-VN");
-                NumberFormat formatter = NumberFormat.getCurrencyInstance(vietnam);
-                String amountVND = formatter.format(amount);
-                String subject = "THÔNG BÁO RÚT TIỀN THÀNH CÔNG";
-                String content = "Xin chào " + currentUser.getFullname() + ",\n"
-                        + "Hóa đơn: " + b.getId() + " đã được thanh toán thành công.\n"
-                        + "Số tiền: " + amountVND + ".\n"
-                        + "Cảm ơn bạn đã sử dụng dịch vụ!";
-                emailService.sendPaymentSuccessEmail(currentUser.getEmail(), subject, content);
+                Bills b = billServices.createWithdrawBill(currentUser.getId(), bankAccountId,
+                        paymentRequest.getAmount());
                 return ResponseEntity.ok(b);
             }
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Withdraw failed"));
         }
@@ -156,16 +127,28 @@ public class BillControllers {
     // get all bills (done)
     @GetMapping("/all/user")
     public ResponseEntity<?> getAllBillUser(HttpServletRequest request) {
-        try{
+        System.out.println("DEBUG: Entering /bills/all/user");
+        try {
             Users currentUser = getUserFromToken(request);
-            if (currentUser.getRole() == null) {
+            if (currentUser == null) {
+                System.out.println("DEBUG: User is null in getAllBillUser");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "User not found"));
             }
-            List<Bills> b = billServices.findAllByUserId(currentUser.getId()); // billServices.findAll(); billServices.findAllByManagerId(currentUser.getId());
+            System.out.println("DEBUG: User found: " + currentUser.getEmail());
+
+            if (currentUser.getRole() == null) {
+                System.out.println("DEBUG: Role is null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "User role not found"));
+            }
+
+            List<Bills> b = billServices.findAllByUserId(currentUser.getId());
+            System.out.println("DEBUG: Found " + (b != null ? b.size() : 0) + " bills");
             return ResponseEntity.ok(b);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
+            System.out.println("DEBUG: RuntimeException in getAllBillUser: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Bill not found"));
         }
@@ -174,16 +157,15 @@ public class BillControllers {
     // get all bills (for admin) (done)
     @GetMapping("/all/admin")
     public ResponseEntity<?> getAllBillAdmin(HttpServletRequest request) {
-        try{
+        try {
             Users currentUser = getUserFromToken(request);
             if (currentUser.getRole() != 1) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Admin only"));
             }
-            List<Bills> b = billServices.findAll(); 
+            List<Bills> b = billServices.findAll();
             return ResponseEntity.ok(b);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Bill not found"));
         }
@@ -192,16 +174,15 @@ public class BillControllers {
     // get all bills for manager (done)
     @GetMapping("/all/mng")
     public ResponseEntity<?> getAllBillMana(HttpServletRequest request) {
-        try{
+        try {
             Users currentUser = getUserFromToken(request);
             if (currentUser.getRole() != 2) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Manager only"));
             }
-            List<Bills> b = billServices.findAllByManagerId(currentUser.getId()); 
+            List<Bills> b = billServices.findAllByManagerId(currentUser.getId());
             return ResponseEntity.ok(b);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Bill not found"));
         }
@@ -210,7 +191,7 @@ public class BillControllers {
     // get bill by id (done)
     @GetMapping("/{billId}")
     public ResponseEntity<?> getBillById(@PathVariable String billId, HttpServletRequest request) {
-        try{
+        try {
             Users currentUser = getUserFromToken(request);
             if (currentUser.getRole() == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -218,8 +199,7 @@ public class BillControllers {
             }
             Bills b = billServices.findBillById(billId);
             return ResponseEntity.ok(b);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Bill not found"));
         }
@@ -228,7 +208,7 @@ public class BillControllers {
     // get new bill (done)
     @GetMapping("/new")
     public ResponseEntity<?> getNewBillUser(HttpServletRequest request) {
-        try{
+        try {
             Users currentUser = getUserFromToken(request);
             if (currentUser.getRole() == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -236,24 +216,23 @@ public class BillControllers {
             }
             Bills draftBill = billServices.getCurrentDraftBill(currentUser.getId());
             if (draftBill == null) {
-                return ResponseEntity.ok(null); 
+                return ResponseEntity.ok(null);
             }
             return ResponseEntity.ok(draftBill);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Bill not found"));
         }
     }
 
-    // pause electricity bill 
+    // pause electricity bill
     @PutMapping("/pause/{billId}")
     public ResponseEntity<?> pauseElectricityBill(@PathVariable String billId, HttpServletRequest request) {
         Users currentUser = getUserFromToken(request);
         Bills existingBill = billServices.findBillById(billId);
         if (!currentUser.getId().equals(existingBill.getUserId())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "User not found"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not found"));
         }
         String payload = "OFF";
         Bills b = billServices.pauseElecBill(billId, payload);
@@ -264,7 +243,7 @@ public class BillControllers {
     // start electricity bill
     @PutMapping("/start/{billId}")
     public ResponseEntity<?> startElectricityBill(@PathVariable String billId, HttpServletRequest request) {
-        try{
+        try {
             Users currentUser = getUserFromToken(request);
             Bills existingBill = billServices.findBillById(billId);
             if (!currentUser.getId().equals(existingBill.getUserId())) {
@@ -272,7 +251,7 @@ public class BillControllers {
                         .body(Map.of("message", "User not found"));
             }
             Price newPrice = priceServices.getPrice();
-            if((currentUser.getBalance() - existingBill.getAmount()) < newPrice.getPrice() * 4){
+            if ((currentUser.getBalance() - existingBill.getAmount()) < newPrice.getPrice() * 4) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("message", "Insufficient balance"));
             }
@@ -280,8 +259,7 @@ public class BillControllers {
             Bills b = billServices.startElecBill(billId, payload);
             billSchedulerServices.cancelScheduledPayment(billId);
             return ResponseEntity.ok(b);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));
         }
@@ -290,24 +268,12 @@ public class BillControllers {
     // paid electricity bill
     @PutMapping("/paid/{billId}")
     public ResponseEntity<?> paidElectricityBill(@PathVariable String billId, HttpServletRequest request) {
-        try{
+        try {
             Users currentUser = getUserFromToken(request);
             Bills b = billServices.paidElecBill(billId);
             billSchedulerServices.cancelScheduledPayment(billId);
-
-            Double amount = b.getAmount();
-            Locale vietnam = Locale.forLanguageTag("vi-VN");
-            NumberFormat formatter = NumberFormat.getCurrencyInstance(vietnam);
-            String amountVND = formatter.format(amount);
-            String subject = "THÔNG BÁO THANH TOÁN HÓA ĐƠN THÀNH CÔNG";
-                String content = "Xin chào " + currentUser.getFullname() + ",\n"
-                        + "Hóa đơn: " + b.getId() + " đã được thanh toán thành công.\n"
-                        + "Số tiền: " + amountVND + ".\n"
-                        + "Cảm ơn bạn đã sử dụng dịch vụ!";
-                emailService.sendPaymentSuccessEmail(currentUser.getEmail(), subject, content);
             return ResponseEntity.ok(b);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));
         }

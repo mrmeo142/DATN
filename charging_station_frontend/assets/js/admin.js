@@ -21,7 +21,8 @@ function handleLogout() {
 
 // Lấy token từ localStorage
 const token = localStorage.getItem('jwtToken');
-const API_BASE = "http://localhost:8080";
+//const API_BASE = "http://localhost:8080";
+const API_BASE = "http://178.128.209.28:8080";
 console.log(token);
 
 if (!token || isTokenExpired(token)) {
@@ -412,7 +413,7 @@ function selectBank(bankId) {
   currentBankId = bankId;
   document.querySelector('#bankDropdown span').textContent = 
     allBanks.find(b => b.id === bankId)?.name || 'Tất cả ngân hàng';
-  currentPage = 1;
+  currentBankPage = 1;
   renderTable();
 }
 
@@ -520,7 +521,6 @@ function viewUserDetail(userId) {
       <p><strong>Phone:</strong> ${user.phone || '—'}</p>
       <p><strong>Birthday:</strong> ${birth}</p>
       <p><strong>Balance:</strong> <strong>${(user.balance || 0).toLocaleString('vi-VN')} VND</strong></p>
-      <p style="margin:4px 0;"><strong>Status:</strong> <span style="color:${user.authorization ? '#27ae60' : '#e74c3c'}; font-weight:600; display:inline-block; margin-left:8px;">${user.authorization ? 'Activated' : 'Not Activated'}</span></p>
       <p><strong>Vehicles:</strong></p>
       ${vehiclesHTML}
     `;
@@ -602,7 +602,7 @@ function renderChargerTable() {
     renderCommonPagination(allChargers.length, chargersPerPage, currentChargerPage, 'chargerPagination', changeChargerPage);
   }
 
-// THÊM NHIỀU TRẠM SẠC – ĐÚNG THEO API CỦA BẠN
+// THÊM NHIỀU TRẠM SẠC
 document.getElementById('btnAddChargers').addEventListener('click', async () => {
   const quantity = parseInt(document.getElementById('chargerQuantity').value);
 
