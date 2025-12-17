@@ -20,23 +20,26 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // tắt CSRF → POST từ Postman ok
-            .cors(cors -> cors.configurationSource(request -> {
-                var corsConfig = new org.springframework.web.cors.CorsConfiguration();
-                corsConfig.setAllowedOrigins(java.util.List.of("http://127.0.0.1:5500")); // frontend origin
-                corsConfig.setAllowedMethods(java.util.List.of("GET","POST","PUT","DELETE","OPTIONS"));
-                corsConfig.setAllowedHeaders(java.util.List.of("*"));
-                corsConfig.setAllowCredentials(true);
-                return corsConfig;
-            }))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/upload/**").permitAll() // public cho ESP32 /api/upload/**
-                .requestMatchers("/login", "/create", "/logout").permitAll() // public endpoints
-                .requestMatchers("/ws/**").permitAll()
-                .anyRequest().authenticated() // các endpoint khác require token
-            )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-            .logout(logout -> logout.disable());
+                .csrf(csrf -> csrf.disable()) // tắt CSRF → POST từ Postman ok
+                .cors(cors -> cors.configurationSource(request -> {
+                    var corsConfig = new org.springframework.web.cors.CorsConfiguration();
+                    // corsConfig.setAllowedOrigins(java.util.List.of("http://127.0.0.1:5500",
+                    // "exp://192.168.1.10:8081")); // frontend
+                    corsConfig.setAllowedOriginPatterns(java.util.List.of("*")); // origin
+                    corsConfig.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    corsConfig.setAllowedHeaders(java.util.List.of("*"));
+                    corsConfig.setAllowCredentials(true);
+                    return corsConfig;
+                }))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/upload/**").permitAll() // public cho ESP32 /api/upload/**
+                        .requestMatchers("/login", "/create", "/logout").permitAll() // public endpoints
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/test/**").permitAll()
+                        .anyRequest().authenticated() // các endpoint khác require token
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout(logout -> logout.disable());
         return http.build();
     }
 

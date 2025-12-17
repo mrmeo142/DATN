@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 
-
 @RestController
 
 public class UsersControllers {
@@ -41,9 +40,10 @@ public class UsersControllers {
     private final PasswordEncoder passwordEncoder;
     private final PromRepositories promRepositories;
     private final TokenBlacklist tokenBlacklist;
-    public UsersControllers(UserServices userServices, VehicleRepository vehicleRepository, 
-                            ChargerRepositories chargerRepositories, PasswordEncoder passwordEncoder, 
-                            PromRepositories promRepositories, TokenBlacklist tokenBlacklist) {
+
+    public UsersControllers(UserServices userServices, VehicleRepository vehicleRepository,
+            ChargerRepositories chargerRepositories, PasswordEncoder passwordEncoder,
+            PromRepositories promRepositories, TokenBlacklist tokenBlacklist) {
         this.userServices = userServices;
         this.vehicleRepository = vehicleRepository;
         this.chargerRepositories = chargerRepositories;
@@ -65,7 +65,6 @@ public class UsersControllers {
         Users user = userServices.getUsersbyEmail(email);
         return user;
     }
-
 
     // create user (done)
     @PostMapping("/create")
@@ -114,7 +113,7 @@ public class UsersControllers {
         Users existingUser = userServices.getUsersbyEmail(email);
         if (existingUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("message", "User not found"));
+                    .body(Map.of("message", "User not found"));
         }
 
         if (!passwordEncoder.matches(rawPassword, existingUser.getPassword())) {
@@ -156,23 +155,52 @@ public class UsersControllers {
                     .body(Map.of("message", e.getMessage()));
         }
     }
+
     // update user (done)
     @PutMapping("/update")
     public ResponseEntity<?> updateUser(HttpServletRequest request, @RequestBody Users user) {
+        System.out.println("DEBUG: Entering /update endpoint");
         try {
             Users update = getUserFromToken(request);
-            if (user.getFullname() != null) update.setFullname(user.getFullname());
-            if (user.getEmail() != null) update.setEmail(user.getEmail());
-            if (user.getIdentification() != null) update.setIdentification(user.getIdentification());
-            if (user.getPhone() != null) update.setPhone(user.getPhone());
-            if (user.getBirthday() != null) update.setBirthday(user.getBirthday());
+            if (update == null) {
+                System.out.println("DEBUG: User not found from token");
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "User not found"));
+            }
+            System.out.println("DEBUG: Found user: " + update.getEmail());
+            System.out.println("DEBUG: Request body email: " + user.getEmail());
+
+            if (user.getFullname() != null)
+                update.setFullname(user.getFullname());
+
+            // Nếu email gửi lên khác với email hiện tại, cần kiểm tra xem email mới đã tồn
+            // tại chưa
+            if (user.getEmail() != null && !user.getEmail().equals(update.getEmail())) {
+                if (userServices.getUsersbyEmail(user.getEmail()) != null) {
+                    System.out.println("DEBUG: Email already exists");
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body(Map.of("message", "Email already exists"));
+                }
+                update.setEmail(user.getEmail());
+            }
+
+            if (user.getIdentification() != null)
+                update.setIdentification(user.getIdentification());
+            if (user.getPhone() != null)
+                update.setPhone(user.getPhone());
+            if (user.getBirthday() != null)
+                update.setBirthday(user.getBirthday());
             if (user.getPassword() != null && user.getPassword().length() >= 6)
                 update.setPassword(passwordEncoder.encode(user.getPassword()));
 
             Users savedUser = userServices.saveUsers(update);
+            System.out.println("DEBUG: Update success");
             return ResponseEntity.ok(savedUser);
 
         } catch (RuntimeException e) {
+            System.out.println("DEBUG: RuntimeException: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", e.getMessage()));
@@ -213,8 +241,7 @@ public class UsersControllers {
             if (user != null) {
                 userServices.deleteUserById(user.getId());
                 return ResponseEntity.ok(Map.of("message", "Deleted successfully"));
-            } 
-            else {
+            } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "User not found"));
             }
@@ -245,7 +272,7 @@ public class UsersControllers {
     // add vehicle (done)
     @PostMapping("/add/vehicles")
     public ResponseEntity<?> addVehicle(HttpServletRequest request, @RequestBody Vehicles vehicle) {
-        try{
+        try {
             Users addvehicle = getUserFromToken(request);
             if (vehicle.getIdentifier() != null) {
                 String cleanedPlate = vehicle.getIdentifier().replaceAll("[\\s-.]", "");
@@ -253,8 +280,7 @@ public class UsersControllers {
             }
             Users user = userServices.addVehicleToUser(addvehicle.getId(), vehicle);
             return ResponseEntity.ok(user);
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", e.getMessage()));
@@ -267,26 +293,26 @@ public class UsersControllers {
             HttpServletRequest request,
             @PathVariable String vehicleId,
             @RequestBody Vehicles vehicle) {
-        try{
+        try {
             Users user = getUserFromToken(request);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User not found"));
+                        .body(Map.of("message", "User not found"));
             }
             for (Vehicles v : user.getVehicles()) {
                 if (v.getId().equals(vehicleId)) {
-                    if (vehicle.getType() != null) v.setType(vehicle.getType());
-                    if (vehicle.getIdentifier() != null){
+                    if (vehicle.getType() != null)
+                        v.setType(vehicle.getType());
+                    if (vehicle.getIdentifier() != null) {
                         String cleanedPlate = vehicle.getIdentifier().replaceAll("[-.]", "");
                         v.setIdentifier(cleanedPlate);
-                    } 
-                    userServices.saveUsers(user); 
+                    }
+                    userServices.saveUsers(user);
                     vehicleRepository.save(v);
                 }
             }
             return ResponseEntity.ok(user);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Vehicle not found"));
         }
@@ -297,19 +323,18 @@ public class UsersControllers {
     public ResponseEntity<?> deleteVehicle(
             @PathVariable String vehicleId,
             HttpServletRequest request) {
-        try{
+        try {
             Users user = getUserFromToken(request);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User not found"));
+                        .body(Map.of("message", "User not found"));
             }
             user.getVehicles().removeIf(st -> st.getId().equals(vehicleId));
-            userServices.saveUsers(user); 
+            userServices.saveUsers(user);
             userServices.deleteVehicleById(vehicleId);
             return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(Map.of("message", "Deleted successfully"));
-        }
-        catch (Exception e) {
+                    .body(Map.of("message", "Deleted successfully"));
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Vehicle not found"));
         }
@@ -325,7 +350,7 @@ public class UsersControllers {
                         .status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Access denied: Admin only"));
             }
-            List<Vehicles> vehicles =  userServices.getAllVehicles();
+            List<Vehicles> vehicles = userServices.getAllVehicles();
             return ResponseEntity.ok(vehicles);
         } catch (RuntimeException e) {
             return ResponseEntity
@@ -336,11 +361,12 @@ public class UsersControllers {
 
     // get vehicle by id (done)
     @GetMapping("/vehicles/{vehicleId}")
-    public ResponseEntity<?> getVehicleById(HttpServletRequest request,@PathVariable String vehicleId) {
+    public ResponseEntity<?> getVehicleById(HttpServletRequest request, @PathVariable String vehicleId) {
         try {
             Users user = getUserFromToken(request);
             Vehicles v = userServices.getVehiclebyId(vehicleId);
-            if(v.getUserId().equals(user.getId())) return ResponseEntity.ok(v);
+            if (v.getUserId().equals(user.getId()))
+                return ResponseEntity.ok(v);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Vehicle not found"));
         } catch (RuntimeException e) {
@@ -351,9 +377,9 @@ public class UsersControllers {
 
     // delete manager (for admin) (done)
     @PutMapping("delete/manager/{userId}")
-    public ResponseEntity<?> deleteManager(@PathVariable String userId, HttpServletRequest request){
-    
-        try{
+    public ResponseEntity<?> deleteManager(@PathVariable String userId, HttpServletRequest request) {
+
+        try {
             Users currentUser = getUserFromToken(request);
             if (currentUser.getRole() != 1) {
                 return ResponseEntity
@@ -370,9 +396,9 @@ public class UsersControllers {
                     return ResponseEntity.status(HttpStatus.ACCEPTED)
                             .body(Map.of("message", "Deleted successfully"));
                 }
-                for(String st : stations){
+                for (String st : stations) {
                     Chargers chg = chargerRepositories.findById(st)
-                        .orElseThrow(() -> new RuntimeException("Charger not found"));
+                            .orElseThrow(() -> new RuntimeException("Charger not found"));
                     chg.setProcess("unprocessed");
                     chargerRepositories.save(chg);
                 }
@@ -380,14 +406,12 @@ public class UsersControllers {
                 promRepositories.deleteByUserId(userId);
                 userServices.saveUsers(user);
                 return ResponseEntity.status(HttpStatus.ACCEPTED)
-                            .body(Map.of("message", "Deleted successfully"));
-            }
-            else {
+                        .body(Map.of("message", "Deleted successfully"));
+            } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "User not found"));
             }
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", e.getMessage()));
