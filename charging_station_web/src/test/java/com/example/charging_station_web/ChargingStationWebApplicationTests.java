@@ -17,7 +17,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
-import java.time.LocalDate;
 import java.util.ArrayList;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -58,7 +57,6 @@ class ChargingStationWebApplicationTests {
 
 		Users existing = new Users(
 				"u1",
-				null,
 				"Old Name",
 				email,
 				"oldpass",
@@ -77,7 +75,6 @@ class ChargingStationWebApplicationTests {
 
 		Users saved = new Users(
 				"u1",
-				null,
 				"New Name",
 				"new@example.com",
 				"encoded-secret",
