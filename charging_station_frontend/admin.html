@@ -44,7 +44,7 @@
         </nav>
       </aside>
 
-    <!-- Bank-Account SECTION (ẩn ban đầu) -->
+    <!-- Bank-Account SECTION  -->
     <section class="main-content" id="bankAccountPage">
       <div class="top-section">
         <div class="bank-management">
@@ -61,7 +61,6 @@
           </button>
         </div>
 
-        <!-- Bên phải: Quản lý giá tiền (40%) -->
         <div class="price-management">
           <div class="price-display">
             <strong>Giá điện hiện tại:</strong> <span id="currentPrice">0 VND/kWh</span>
@@ -90,18 +89,16 @@
               </tr>
             </thead>
             <tbody id="bankAccountTableBody">
-              <!-- Dữ liệu sẽ được render bằng JS -->
             </tbody>
           </table>
         </div>
 
-        <!-- Phân trang -->
         <div class="pagination" id="bankPagination">
-          <!-- Nút phân trang sẽ được tạo bằng JS -->
+          
         </div>
 
 
-        <!-- ==================== MODAL THÊM / SỬA NGÂN HÀNG ==================== -->
+        <!------HÊM / SỬA NGÂN HÀNG ----->
         <div class="modal" id="bankModal">
           <div class="modal-content">
             <div class="modal-header">
@@ -120,7 +117,7 @@
           </div>
         </div>
 
-        <!-- ==================== MODAL CẬP NHẬT GIÁ ==================== -->
+        <!------------ CẬP NHẬT GIÁ ---------------->
         <div class="modal" id="priceModal">
           <div class="modal-content">
             <div class="modal-header">
@@ -140,7 +137,7 @@
       </div>
     </section>
 
-    <!-- USER SECTION (ẩn ban đầu) -->
+    <!-- USER SECTION -->
     <section class="user-page" id="userPage">
       <div class="top-user-section">
         <div class="search-box">
@@ -157,16 +154,13 @@
         </div>
       </div>
 
-      <!-- PHẦN DƯỚI: GRID + PHÂN TRANG -->
       <div class="bottom-user-section">
         <div class="section-title">
           <h3>Danh sách người dùng</h3>
           <div class="total-records">Tổng: <span id="totalUsers">0</span> Users</div>
         </div>
 
-        <!-- GRID CONTAINER -->
         <div class="user-grid-container">
-          <!-- Header cố định -->
           <div class="user-grid-header">
             <div>ID</div>
             <div>Họ tên</div>
@@ -177,16 +171,15 @@
             <div>Hành động</div>
           </div>
 
-          <!-- Body cuộn được -->
           <div class="user-grid-body" id="userGridBody">
-            <!-- Dữ liệu được render bằng JS -->
+
           </div>
         </div>
 
         <!-- Phân trang -->
         <div class="pagination" id="userPagination"></div>
       </div>
-      <!-- MODAL CHI TIẾT NGƯỜI DÙNG -->
+      <!-- -----------CHI TIẾT User----------------->
       <div class="modal" id="userDetailModal">
         <div class="modal-content">
           <div class="modal-header">
@@ -232,7 +225,7 @@
         <div class="pagination" id="managerPagination"></div>
       </div>
 
-      <!-- MODAL XEM CHI TIẾT MANAGER -->
+      <!-- -----------CHI TIẾT MANAGER ----------------->
       <div class="modal" id="managerDetailModal">
         <div class="modal-content">
           <div class="modal-header">
@@ -246,7 +239,7 @@
         </div>
       </div>
 
-      <!-- MODAL THÊM TRẠM CHO MANAGER -->
+      <!-----------------THÊM TRẠM SẠC------------------->
       <div class="modal" id="addChargerToManagerModal">
         <div class="modal-content">
           <div class="modal-header">
@@ -270,7 +263,7 @@
       </div>
     </section>
 
-    <!-- CHARGER SECTION (ẩn ban đầu) -->
+    <!------------- CHARGER SECTION--------->
     <section class="charger-page" id="chargerPage">
       <div class="bottom-charger-section">
         <div class="section-title">
@@ -295,14 +288,13 @@
             <div>Hành động</div>
           </div>
           <div class="charger-grid-body" id="chargerGridBody">
-            <!-- JS sẽ render ở đây -->
           </div>
         </div>
 
         <div class="pagination" id="chargerPagination"></div>
       </div>
 
-      <!-- MODAL CHI TIẾT TRẠM SẠC -->
+      <!----------CHI TIẾT TRẠM SẠC ---------------->
       <div class="modal" id="chargerDetailModal">
         <div class="modal-content">
           <div class="modal-header">
@@ -319,7 +311,7 @@
       </div>
     </section>
 
-    <!-- PROMOTION SECTION (ẩn ban đầu) -->
+    <!-- PROMOTION SECTION -->
     <section class="promotion-page" id="promotionPage">
       <div class="promotion-list-section">
         <div class="section-title">
@@ -348,7 +340,7 @@
         <div class="pagination" id="promotionPagination"></div>
       </div>
 
-      <!-- MODAL XEM CHI TIẾT -->
+      <!------------- CHI TIẾT ĐẰNG KÝ------------------->
       <div class="modal" id="promotionDetailModal">
         <div class="modal-content">
           <div class="modal-header">

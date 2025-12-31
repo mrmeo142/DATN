@@ -6,8 +6,8 @@ const char* ssid = "TP-LINK_30FA";
 const char* password= "minhhue77";
 
 // MQTT
-//const char* mqtt_server = "178.128.209.28";
-const char* mqtt_server = "192.168.0.100";
+const char* mqtt_server = "178.128.209.28";
+//const char* mqtt_server = "192.168.0.100";
 const int mqtt_port = 1883;
 const char* mqtt_user = "";   // nếu broker có user/pass thì thêm vào
 const char* mqtt_pass = "";

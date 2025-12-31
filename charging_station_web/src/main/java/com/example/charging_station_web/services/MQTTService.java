@@ -35,9 +35,9 @@ public class MQTTService {
             mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
 
             MqttConnectOptions options = new MqttConnectOptions();
-            options.setAutomaticReconnect(false); // Tắt tự reconnect
-            options.setCleanSession(true);        // Session mới khi kết nối
-            options.setConnectionTimeout(10);     // Timeout kết nối
+            options.setAutomaticReconnect(false); 
+            options.setCleanSession(true);       
+            options.setConnectionTimeout(10);     
 
             mqttClient.setCallback(new MqttCallback() {
                 @Override
@@ -52,7 +52,7 @@ public class MQTTService {
                     String id = s[2];
                     String billId = s[3];
 
-                    payload = payload.replaceAll(",}", "}"); // fix JSON lỗi
+                    payload = payload.replaceAll(",}", "}"); 
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode node = mapper.readTree(payload);
                     Double current = node.get("ax").asDouble();
@@ -65,7 +65,6 @@ public class MQTTService {
 
                 @Override
                 public void deliveryComplete(IMqttDeliveryToken token) {
-                    // Không cần xử lý publish trong ví dụ này
                 }
             });
 
@@ -78,10 +77,10 @@ public class MQTTService {
         }
     }
 
-    // Publish tới topic có id
+    // Publish 
     public void publishToDevice(String deviceId, String billId, String payload) {
         try {
-            String topic = "esp32/led/" + deviceId + "/" + billId ; // build topic theo id
+            String topic = "esp32/led/" + deviceId + "/" + billId ; 
             MqttMessage message = new MqttMessage(payload.getBytes());
             message.setQos(1);
             mqttClient.publish(topic, message);

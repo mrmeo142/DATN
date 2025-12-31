@@ -265,11 +265,10 @@ public class BillControllers {
         }
     }
 
-    // paid electricity bill
+    // paid electricity bill (done)
     @PutMapping("/paid/{billId}")
     public ResponseEntity<?> paidElectricityBill(@PathVariable String billId, HttpServletRequest request) {
         try {
-            Users currentUser = getUserFromToken(request);
             Bills b = billServices.paidElecBill(billId);
             billSchedulerServices.cancelScheduledPayment(billId);
             return ResponseEntity.ok(b);

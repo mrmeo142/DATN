@@ -24,7 +24,7 @@ public class BillSchedulerServices {
         this.taskScheduler = taskScheduler;
     }
 
-    // Map để quản lý task theo billId
+    // quản lý task theo billId
     private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 
     @EventListener
@@ -34,16 +34,15 @@ public class BillSchedulerServices {
         scheduleAutoPayment(billId);
         System.out.println("OverAmountEvent received, bill " + billId + " scheduled for payment.");
     }
-    // Lập lịch auto-payment
+    // Lập lịch
     public void scheduleAutoPayment(String billId) {
 
-        // Huỷ task cũ nếu đã có
+        // Huỷ task cũ
         ScheduledFuture<?> oldTask = scheduledTasks.get(billId);
         if (oldTask != null && !oldTask.isDone()) {
             oldTask.cancel(false);
         }
 
-        // Lên lịch
         ScheduledFuture<?> future = taskScheduler.schedule(() -> {
             Bills bill = billServices.findBillById(billId);
 

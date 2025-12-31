@@ -42,7 +42,6 @@ if (!token || isTokenExpired(token)) {
         const role = user.role;
         const userId = user.id;
 
-        // Lưu thông tin user để dùng ở các phần khác
         localStorage.setItem('userFullName', fullName);
         localStorage.setItem('userRole', role);
         localStorage.setItem('userId', userId);
@@ -72,24 +71,21 @@ document.addEventListener('DOMContentLoaded', () => {
 function showUserDropdown(loginHeaderBtn, fullname, role) {
     if (!loginHeaderBtn) return;
 
-    // Xóa event listener cũ
     const newLoginHeaderBtn = loginHeaderBtn.cloneNode(true);
     loginHeaderBtn.parentNode.replaceChild(newLoginHeaderBtn, loginHeaderBtn);
     loginHeaderBtn = newLoginHeaderBtn;
 
-    // Thay nội dung nút
     loginHeaderBtn.innerHTML = `
         <span class="span">${fullname}</span>
         <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
     `;
 
-    // Tạo dropdown
     const dropdown = document.createElement('ul');
     dropdown.classList.add('user-dropdown');
 
     let options = [];
     if (role === 0) options = ['User'];
-    else if (role === 1) options = ['Admin', 'User'];
+    else if (role === 1) options = ['Admin'];
     else if (role === 2) options = ['Manager', 'User'];
 
     options.forEach(option => {
@@ -104,7 +100,6 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
         dropdown.appendChild(li);
     });
 
-    // Thêm Logout
     const logoutLi = document.createElement('li');
     logoutLi.textContent = 'Logout';
     logoutLi.classList.add('dropdown-item');
@@ -118,22 +113,21 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
 
     loginHeaderBtn.appendChild(dropdown);
 
-    // Click để mở dropdown
+    // mở dropdown
     loginHeaderBtn.addEventListener('click', e => {
         e.stopPropagation();
         dropdown.classList.toggle('active');
     });
 
-    // Click ra ngoài đóng dropdown
+    // đóng dropdown
     document.addEventListener('click', () => dropdown.classList.remove('active'));
 }
 
-// ==================== HÀM PHÂN TRANG CHUNG ====================
+// ------------ PHÂN TRANG -----------
 function renderCommonPagination(totalItems, pageSize, currentPage, containerId, changePageCallback) {
   const totalPages = Math.ceil(totalItems / pageSize);
   const container = document.getElementById(containerId);
 
-  // Nếu ít hơn 2 trang hoặc không có dữ liệu → ẩn phân trang
   if (totalPages <= 1 || totalItems === 0) {
     container.innerHTML = '';
     return;
@@ -170,13 +164,13 @@ function renderCommonPagination(totalItems, pageSize, currentPage, containerId, 
   container.innerHTML = html;
 }
 
-/* ===================== CHARGER TAB – HOÀN CHỈNH ===================== */
+/* ----------------- CHARGER TAB –--------------- */
 let allChargers = [];
 let filteredChargers = [];
 let currentChargerPage = 1;
 const chargersPerPage = 2;
 
-// Load trạm sạc
+// Load danh sách trạm sạc
 async function loadChargers() {
     try {
         const res = await fetch(`${API_BASE}/charger/manager`, {
@@ -197,7 +191,7 @@ async function loadChargers() {
     }
 }
 
-// Render bảng
+// Render danh sách trạm sạc
 function renderChargerTable() {
     const container = document.getElementById('chargerGridBody');
     const start = (currentChargerPage - 1) * chargersPerPage;
@@ -229,7 +223,6 @@ function renderChargerTable() {
         `;
     }).join('');
 
-    // DÙNG HÀM PHÂN TRANG CHUNG
     renderCommonPagination(filteredChargers.length,chargersPerPage,currentChargerPage,'chargerPagination',ChargerPage
     );
 }
@@ -304,7 +297,7 @@ let filteredBills = [];
 let currentBillPage = 1;
 const billsPerPage = 3;
 
-// Load tất cả bill của manager
+// Tải danh sách hóa đơn
 async function loadBills() {
   try {
     const res = await fetch(`${API_BASE}/bills/all/mng`, {
@@ -325,7 +318,7 @@ async function loadBills() {
   }
 }
 
-// Tính tổng tiền
+// Tính tổng doanh thu
 function calculateRevenue() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -354,7 +347,7 @@ function calculateRevenue() {
   document.getElementById('yearRevenue').textContent = format(yearTotal);
 }
 
-// Render bảng
+// Render danh sách hóa đơn
 function renderBillTable() {
   const container = document.getElementById('billGridBody');
   const start = (currentBillPage - 1) * billsPerPage;
@@ -392,7 +385,7 @@ function billPage(page) {
   renderBillTable();
 }
 
-// Xem chi tiết bill
+// Chi tiết hóa đơn
 async function viewBill(billId) {
   try {
     const res = await fetch(`${API_BASE}/bills/${billId}`, {
@@ -421,19 +414,18 @@ function closeBillDetail() {
   document.getElementById('billDetailModal').style.display = 'none';
 }
 
-// HÀM CHUYỂN GIỜ
+// CHUYỂN GIỜ
 function formatTotalTime(hoursDecimal) {
   if (!hoursDecimal && hoursDecimal !== 0) return '—';
 
-  const totalSeconds = Math.round(hoursDecimal * 3600); // chuyển giờ → giây
+  const totalSeconds = Math.round(hoursDecimal * 3600); 
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
 
-  // Chỉ hiện những phần có giá trị > 0 (trừ giây luôn hiện)
   const parts = [];
   if (h > 0) parts.push(`${h} giờ`);
-  if (m > 0 || h > 0) parts.push(`${m} phút`); // luôn hiện phút nếu có giờ
+  if (m > 0 || h > 0) parts.push(`${m} phút`); 
   parts.push(`${s} giây`);
 
   return parts.join(' ');
@@ -446,9 +438,7 @@ document.getElementById('customDate')?.addEventListener('change', applyBillFilte
 function applyBillFilter() {
   const filterType = document.getElementById('filterTime').value;
   const customDateInput = document.getElementById('customDate');
-  const selectedDate = customDateInput.value; // YYYY-MM-DD
-
-  // Hiện/ẩn ô chọn ngày
+  const selectedDate = customDateInput.value; 
   customDateInput.style.display = filterType === 'custom' ? 'inline-block' : 'none';
 
   if (filterType === 'all') {
@@ -499,7 +489,6 @@ function applyBillFilter() {
   renderBillTable();
 }
 
-/* ===================== CHUYỂN TAB – SỬA LỖI HIỆN LẦN ĐẦU ===================== */
 const pages = {
     chargerBtn: document.querySelector(".charger-page"),
     billBtn:    document.querySelector(".bill-page"),
@@ -507,7 +496,6 @@ const pages = {
 };
 
 function switchPage(targetPage, clickedItem) {
-    // Ẩn tất cả
     document.querySelectorAll('.charger-page, .bill-page')
         .forEach(p => p.style.display = 'none');
 
@@ -518,7 +506,6 @@ function switchPage(targetPage, clickedItem) {
     if (clickedItem) clickedItem.classList.add('active');
 }
 
-// Gắn sự kiện cho menu
 document.querySelector(".sidebar-left nav li:nth-child(1)")?.addEventListener("click", function() {
     switchPage(pages.chargerBtn, this);
     loadChargers(); 
@@ -529,7 +516,6 @@ document.querySelector(".sidebar-left nav li:nth-child(2)")?.addEventListener("c
     loadBills();
 });
 
-// Khi load trang 
 document.addEventListener("DOMContentLoaded", () => {
     switchPage(pages.chargerBtn, document.querySelector(".sidebar-left nav li:nth-child(1)"));
     loadChargers(); 

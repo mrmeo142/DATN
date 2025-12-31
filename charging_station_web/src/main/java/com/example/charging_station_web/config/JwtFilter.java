@@ -55,7 +55,6 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
         try {
-            // Kiểm tra blacklist trước (tránh parse token đã bị thu hồi)
             if (!requestURI.equals("/logout") && blacklistRepository.existsByToken(token)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("{\"message\": \"Token đã bị thu hồi\"}");

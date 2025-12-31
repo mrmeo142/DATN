@@ -51,7 +51,7 @@ public class UserServices {
         usersRepositories.deleteById(userId);
     }
 
-    // get all users (non authourized)
+    // get all users 
     public List<Users> getAllUsers() {
         return usersRepositories.findAll();
     }

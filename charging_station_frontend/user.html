@@ -22,10 +22,10 @@
       <a href="index.html" class="logo">
         <img src="./assets/images/logo.svg" width="160" height="50" alt="logo">
       </a>
-      <div class="search-bar">
+      <!-- <div class="search-bar">
         <input type="text" placeholder="What are you looking for?">
         <button><i class="fa-solid fa-magnifying-glass"></i></button>
-      </div>
+      </div> -->
       <div class="header-action">
         <a href="#" class="btn btn-primary" id="loginBtn">
           <span class="span">User</span>          
@@ -46,7 +46,7 @@
       </nav>
     </aside>
 
-    <!-- CHARGING SECTION (ẩn ban đầu) -->
+    <!-- CHARGING SECTION -->
     <section class="main-content">
       <div class="vehicle-display">
         <img src="./assets/images/otodien.png" alt="Electric Car">
@@ -84,7 +84,7 @@
           </div>
           <div class="cost-item">
             <p>Cost/kWh</p>
-            <span id="price">0.09 VND</span>
+            <span id="price">0.00 VND</span>
           </div>
           <div class="cost-item total-cost">
             <p>Total Cost</p>
@@ -120,18 +120,13 @@
           </div>
         </div>
       </div>
-
-      <!-- CHART -->
-      <div class="chart-summary">
-        <canvas id="realtimeChart"></canvas>
-      </div>
     </section>
 
-    <!-- PROFILE SECTION (ẩn ban đầu) -->
+    <!-- PROFILE SECTION -->
     <section class="profile-page">
       <h2>User Profile</h2>
       <div class="profile-grid">
-        <!-- FORM Personal Information -->
+        <!-- Personal Information -->
         <form class="profile-card" id="personalForm">
           <h3>Personal Information</h3>
           <div class="form-group">
@@ -158,7 +153,7 @@
           <button type="submit" class="save-btn">Save Changes</button>
         </form>
 
-        <!-- FORM Vehicle Information -->
+        <!-- Vehicle Information -->
         <div class="profile-card">
           <h3>Vehicle List</h3>
           <table class="vehicle-table">
@@ -208,7 +203,7 @@
       </div>
     </section>
 
-    <!-- REGISTRATION SECTION (ẩn ban đầu) -->
+    <!-- REGISTRATION SECTION -->
     <section class="registration-page">
         <div class="registration">
           <form class="registration-form">
@@ -243,7 +238,7 @@
         </div>
     </section>
 
-    <!-- WALLET SECTION (ẩn ban đầu) -->
+    <!-- WALLET SECTION -->
     <section class="wallet-page">
       <div class="wallet-container">
         <div class="wallet-actions">
@@ -251,11 +246,8 @@
             <div id="historyTab">History Bills</div>
           </div>
 
-          <!-- Content chính gói trong 1 div -->
           <div class="wallet-content">
-            <!-- My Wallet -->
             <div class="wallet-section active">
-              <!-- Bên trái -->
               <div class="wallet-left">
                 <div class="wallet-card">
                   <h2>John Doe</h2>
@@ -279,7 +271,6 @@
                 </div>
               </div>
 
-              <!-- Bên phải -->
               <div class="wallet-right">
                 <h3>Select Account</h3>
                 <div class="account-dropdown">
@@ -319,7 +310,7 @@
                 </div>
               </div>
               <div class="pagination" id="billPagination"></div>
-              <!-- POPUP CHI TIẾT GIAO DỊCH -->
+              <!-- CHI TIẾT HÓA ĐƠN-->
               <div id="billDetailOverlay" class="bill-detail-overlay" style="display: none;">
                 <div class="bill-detail-modal">
                   <div class="bill-detail-header">
@@ -336,7 +327,10 @@
     </section>
 
     <aside class="sidebar-right">
-      <div id="googleMap" style="width:100%; height:100%; border-radius: 16px; overflow:hidden;"></div>
+      <!-- CHART REAL TIME-->
+      <div class="chart-summary">
+        <canvas id="realtimeChart"></canvas>
+      </div>
     </aside>
   </main>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>

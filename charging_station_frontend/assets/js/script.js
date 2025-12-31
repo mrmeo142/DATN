@@ -81,41 +81,39 @@ function setupDropdownHover(loginBtn) {
 function showUserDropdown(loginHeaderBtn, fullname, role) {
   if (!loginHeaderBtn) return;
 
-  // Xóa tất cả event listener cũ
+
   const newLoginHeaderBtn = loginHeaderBtn.cloneNode(true);
   loginHeaderBtn.parentNode.replaceChild(newLoginHeaderBtn, loginHeaderBtn);
   loginHeaderBtn = newLoginHeaderBtn;
 
-  // Thay nội dung nút
+
   loginHeaderBtn.innerHTML = `
     <span class="span">${fullname}</span>
     <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
   `;
 
-  // Tạo dropdown theo role
   const dropdown = document.createElement('ul');
   dropdown.classList.add('user-dropdown');
 
-  // Logic hiển thị theo yêu cầu
   let options = [];
 
   if (role === 0) {
     options = ['User'];
   } 
   else if (role === 1) {
-    options = ['Admin', 'User'];
+    options = ['Admin'];
   } 
   else if (role === 2) {
     options = ['Manager', 'User'];
   }
 
-  // Tạo item trong dropdown
+  // item trong dropdown
   options.forEach(option => {
     const li = document.createElement('li');
     li.textContent = option;
     li.classList.add('dropdown-item');
     
-    // Thêm sự kiện click
+    // sự kiện click
     li.addEventListener('click', () => {
       if (option === 'User') {
         window.location.href = 'user.html'; 
@@ -129,7 +127,7 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
     dropdown.appendChild(li);
   });
 
-  // Thêm Logout
+  // Logout
   const logoutLi = document.createElement('li');
   logoutLi.textContent = 'Logout';
   logoutLi.classList.add('dropdown-item');
@@ -138,13 +136,13 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
 
   loginHeaderBtn.appendChild(dropdown);
 
-  // Click để mở dropdown
+  // mở dropdown
   loginHeaderBtn.addEventListener('click', e => {
     e.stopPropagation();
     dropdown.classList.toggle('active');
   });
 
-  // Click ra ngoài đóng dropdown
+  // đóng dropdown
   document.addEventListener('click', () => dropdown.classList.remove('active'));
 
   setupDropdownHover(loginHeaderBtn);
@@ -152,7 +150,7 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
 
 
 /**
- * #MODAL & LOGIN/ SIGNUP LOGIC
+ * #MODAL & LOGIN/ SIGNUP
  */
 document.addEventListener('DOMContentLoaded', () => {
   const loginHeaderBtn = document.getElementById('loginBtn');
@@ -163,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const showLoginLink = document.getElementById('showLogin');
   const closeModalBtns = document.querySelectorAll('[data-modal-close]');
 
-  // Nếu đã login trước đó
+  // Kiểm trađăng nhập
   const savedName = localStorage.getItem('userFullName');
   const savedRole = parseInt(localStorage.getItem('userRole'));
   if (savedName && loginHeaderBtn) {
@@ -314,7 +312,6 @@ async function logout() {
   window.location.reload();
 }
 
-// CHARGE NOW BUTTON – BẢN HOÀN HẢO CUỐI CÙNG, KHÔNG THỂ LỖI NỮA!
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('chargeNowBtn');
   btn.addEventListener('click', () => {
@@ -323,7 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (token) {
       window.location.href = 'user.html';
     } else {
-      // CHƯA ĐĂNG NHẬP → hiện alert + mở modal
       alert('Bạn cần đăng nhập để sạc xe!');
     }
   });

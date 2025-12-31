@@ -8,7 +8,7 @@ import java.util.Date;
 
 public class JwtUtil {
 
-    private static final String SECRET_KEY = "mySuperSecretKeyForJWTsMustBeLongEnough123!"; // ít nhất 256 bit
+    private static final String SECRET_KEY = "mySuperSecretKeyForJWTsMustBeLongEnough123!"; 
     private static final Key KEY = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
 
     // Tạo token
@@ -21,12 +21,12 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Lấy useremail từ token
+    // Lấy email từ token
     public static String extractEmail(String token) {
         return getClaims(token).getSubject();
     }
 
-    // Kiểm tra token còn hiệu lực không
+    // Kiểm tra token còn hiệu lực
     public static boolean validateToken(String token, String email) {
         return extractEmail(token).equals(email) && !isTokenExpired(token);
     }

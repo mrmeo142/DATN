@@ -26,7 +26,7 @@ const API_BASE = "http://178.128.209.28:8080";
 console.log(token);
 
 if (!token || isTokenExpired(token)) {
-    handleLogout(); // token hết hạn → logout
+    handleLogout(); 
 } else {
     fetch(`${API_BASE}/profile`, {
         method: 'GET',
@@ -41,13 +41,10 @@ if (!token || isTokenExpired(token)) {
         const fullName = user.fullname || 'User';
         const role = user.role;
         const userId = user.id;
-
-        // Lưu thông tin user để dùng ở các phần khác
         localStorage.setItem('userFullName', fullName);
         localStorage.setItem('userRole', role);
         localStorage.setItem('userId', userId);
 
-        // Hiển thị dropdown user
         const loginHeaderBtn = document.getElementById('loginBtn');
         if (loginHeaderBtn && typeof showUserDropdown === 'function') {
             showUserDropdown(loginHeaderBtn, fullName, role);
@@ -72,24 +69,21 @@ document.addEventListener('DOMContentLoaded', () => {
 function showUserDropdown(loginHeaderBtn, fullname, role) {
     if (!loginHeaderBtn) return;
 
-    // Xóa event listener cũ
     const newLoginHeaderBtn = loginHeaderBtn.cloneNode(true);
     loginHeaderBtn.parentNode.replaceChild(newLoginHeaderBtn, loginHeaderBtn);
     loginHeaderBtn = newLoginHeaderBtn;
 
-    // Thay nội dung nút
     loginHeaderBtn.innerHTML = `
         <span class="span">${fullname}</span>
         <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
     `;
 
-    // Tạo dropdown
     const dropdown = document.createElement('ul');
     dropdown.classList.add('user-dropdown');
 
     let options = [];
     if (role === 0) options = ['User'];
-    else if (role === 1) options = ['Admin', 'User'];
+    else if (role === 1) options = ['Admin'];
     else if (role === 2) options = ['Manager', 'User'];
 
     options.forEach(option => {
@@ -104,7 +98,6 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
         dropdown.appendChild(li);
     });
 
-    // Thêm Logout
     const logoutLi = document.createElement('li');
     logoutLi.textContent = 'Logout';
     logoutLi.classList.add('dropdown-item');
@@ -118,56 +111,51 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
 
     loginHeaderBtn.appendChild(dropdown);
 
-    // Click để mở dropdown
+    // mở dropdown
     loginHeaderBtn.addEventListener('click', e => {
         e.stopPropagation();
         dropdown.classList.toggle('active');
     });
 
-    // Click ra ngoài đóng dropdown
+    // đóng dropdown
     document.addEventListener('click', () => dropdown.classList.remove('active'));
 }
 
-/* ===================== SIDEBAR NAVIGATION ===================== */
+/* ----------------- NAVIGATION --------------- */
 const menuItems = document.querySelectorAll(".sidebar-left nav li");
 
 const pages = {
-  backaccBtn:   document.querySelector(".main-content"),      // Bank Account
+  backaccBtn:   document.querySelector(".main-content"), 
   userBtn:      document.querySelector(".user-page"),
   managerBtn:   document.querySelector(".manager-page"),
   chargerBtn:   document.querySelector(".charger-page"),
   promotionBtn: document.querySelector(".promotion-page")
 };
 
-// Hàm chuyển trang CHUẨN (chỉ 1 hàm duy nhất cho tất cả)
+// Hàm chuyển trang 
 function switchPage(targetPageElement, clickedButton) {
-  // 1. Ẩn tất cả trang
   Object.values(pages).forEach(page => {
     if (page) page.style.display = "none";
   });
 
-  // 2. Hiện trang được chọn (dùng flex để giữ layout)
   if (targetPageElement) {
-    targetPageElement.style.display = "flex";  // QUAN TRỌNG: dùng "flex" thay vì "block"
+    targetPageElement.style.display = "flex"; 
   }
 
-  // 3. Xóa active tất cả menu
   menuItems.forEach(item => item.classList.remove("active"));
 
-  // 4. Thêm active cho nút vừa click
   if (clickedButton) {
     clickedButton.classList.add("active");
   }
 }
 
-// Gắn sự kiện cho từng nút – cực gọn!
 document.querySelector(".sidebar-left nav li:nth-child(1)").addEventListener("click", function() {
   switchPage(pages.backaccBtn, this);
 });
 
 document.querySelector(".sidebar-left nav li:nth-child(2)").addEventListener("click", function() {
   switchPage(pages.userBtn, this);
-  loadUsers?.(); // gọi load user khi vào tab
+  loadUsers?.(); 
 });
 
 document.querySelector(".sidebar-left nav li:nth-child(3)").addEventListener("click", function() {
@@ -189,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
   switchPage(pages.backaccBtn, document.querySelector(".sidebar-left nav li:nth-child(1)"));
 });
 
-// ==================== BANK ACCOUNT ADMIN JS ====================
+// --------------- TAB BANK & PRICE ---------------
 let allBanks = [];
 let allBankAccounts = [];
 let currentBankId = null;
@@ -201,7 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPrice();
   loadAllBankAccounts();
 
-  // Dropdown ngân hàng
   document.getElementById('bankDropdown').addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById('bankList').classList.toggle('show');
@@ -222,13 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Submit ngân hàng
   document.getElementById('submitBankBtn').addEventListener('click', saveBank);
-
-  // Submit giá
   document.getElementById('submitPriceBtn').addEventListener('click', updatePrice);
 
-  // Click ngoài đóng dropdown
+  // đóng dropdown
   document.addEventListener('click', () => {
     document.getElementById('bankList').classList.remove('show');
   });
@@ -244,7 +228,7 @@ async function loadBanks() {
   } catch (err) { console.error(err); }
 }
 
-// ==================== HÀM RENDER DROPDOWN NGÂN HÀNG ====================
+// ---------- HÀM RENDER DANH SÁCH NGÂN HÀNG -----------
 function renderBankList() {
   const list = document.getElementById('bankList');
 
@@ -368,13 +352,11 @@ async function loadAllBankAccounts() {
   renderTable();
 }
 
-// ==================== HÀM RENDER BẢNG ====================
+// ---------- RENDER DANH SÁCH TÀI KHOẢN -----------
 function renderTable() {
   const tbody = document.getElementById('bankAccountTableBody');
   const start = (currentBankPage - 1) * banksPerPage;
   const end = start + banksPerPage;
-
-  // Lọc theo ngân hàng nếu có chọn
   let data = allBankAccounts;
   if (currentBankId) {
     data = allBankAccounts.filter(acc => acc.bankId === currentBankId);
@@ -401,14 +383,12 @@ function renderTable() {
   renderCommonPagination(data.length, banksPerPage, currentBankPage, 'bankPagination', changeBankPage);
 }
 
-// Hàm hỗ trợ chuyển trang
 function changeBankPage(page) {
   if (page < 1 || page > Math.ceil(allBankAccounts.length / banksPerPage)) return;
   currentBankPage = page;
   renderTable();
 }
 
-// Gọi khi chọn ngân hàng từ dropdown
 function selectBank(bankId) {
   currentBankId = bankId;
   document.querySelector('#bankDropdown span').textContent = 
@@ -417,7 +397,7 @@ function selectBank(bankId) {
   renderTable();
 }
 
-// ==================== USER MANAGEMENT ====================
+// ----------- DANH SÁCH TẤT CẢ TÀI KHOẢN NGƯỜI DÙNG -----------------
 let allUsers = [];
 let filteredUsers = [];
 let currentUserPage = 1;
@@ -475,7 +455,7 @@ function changeUserPage(page) {
   renderUserTable();
 }
 
-// Tìm kiếm + lọc role
+// Tìm kiếm + lọc
 document.getElementById('searchName').addEventListener('input', filterUsers);
 document.getElementById('roleFilter').addEventListener('change', filterUsers);
 
@@ -493,7 +473,7 @@ function filterUsers() {
   renderUserTable();
 }
 
-// ==================== XEM CHI TIẾT USER – HIỂN THỊ XE ====================
+// ------------ XEM CHI TIẾT THÔNG TIN USER ------------
 function viewUserDetail(userId) {
   fetch(`${API_BASE}/profile/${userId}`, {
     headers: { 'Authorization': 'Bearer ' + token }
@@ -556,7 +536,7 @@ let allChargers = [];
 let currentChargerPage = 1;
 const chargersPerPage = 3;
 
-// Load danh sách trạm sạc
+// Tải danh sách trạm sạc
 async function loadChargers() {
   try {
     fetch(`${API_BASE}/charger/all`,{
@@ -572,7 +552,7 @@ async function loadChargers() {
   }
 }
 
-// Render bảng trạm sạc
+// Render danh sách trạm sạc
 function renderChargerTable() {
     const container = document.getElementById('chargerGridBody');
     const start = (currentChargerPage - 1) * chargersPerPage;
@@ -602,7 +582,7 @@ function renderChargerTable() {
     renderCommonPagination(allChargers.length, chargersPerPage, currentChargerPage, 'chargerPagination', changeChargerPage);
   }
 
-// THÊM NHIỀU TRẠM SẠC
+// THÊM TRẠM SẠC
 document.getElementById('btnAddChargers').addEventListener('click', async () => {
   const quantity = parseInt(document.getElementById('chargerQuantity').value);
 
@@ -710,7 +690,7 @@ let filteredManagers = [];
 let currentManagerPage = 1;
 const managersPerPage = 2;
 
-// Load danh sách manager (role = 2)
+// tảidanh sách manager
 async function loadManagers() {
   try {
     const res = await fetch(`${API_BASE}/all`, {
@@ -726,7 +706,7 @@ async function loadManagers() {
   }
 }
 
-// Render bảng
+// Render danh sách  manager
 function renderManagerTable() {
   const container = document.getElementById('managerGridBody');
   const start = (currentManagerPage - 1) * managersPerPage;
@@ -763,7 +743,7 @@ function changeManagerPage(page) {
   renderManagerTable();
 }
 
-// Tìm kiếm realtime
+// Tìm kiếm 
 document.getElementById('searchManager')?.addEventListener('input', function() {
   const query = this.value.toLowerCase();
   filteredManagers = allManagers.filter(m =>
@@ -774,18 +754,15 @@ document.getElementById('searchManager')?.addEventListener('input', function() {
   renderManagerTable();
 });
 
-// XEM CHI TIẾT MANAGER + HIỂN THỊ DANH SÁCH TRẠM SẠC
+// XEM CHI TIẾT MANAGER
 async function viewManager(id) {
   try {
     const res = await fetch(`${API_BASE}/profile/${id}`, {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const user = await res.json();
-
-    // Lấy danh sách station ID
     const stationIds = user.stations || [];
 
-    // Render danh sách trạm (nếu có)
     let stationsHTML = '';
     if (stationIds.length === 0) {
       stationsHTML = '<p><em>Chưa có trạm sạc nào</em></p>';
@@ -818,7 +795,7 @@ function closeManagerDetail() {
   document.getElementById('managerDetailModal').style.display = 'none';
 }
 
-// Modal thêm trạm
+// Modal thêm trạm sạc
 function openAddChargerModal(userId, name) {
   document.getElementById('addChargerUserId').value = userId;
   document.getElementById('addChargerModalTitle').textContent = `Thêm trạm cho: ${name}`;
@@ -830,7 +807,7 @@ function closeAddChargerModal() {
   document.getElementById('addChargerToManagerModal').style.display = 'none';
 }
 
-// Submit thêm trạm
+// Thêm trạm sạc
 document.getElementById('addChargerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const userId = document.getElementById('addChargerUserId').value;
@@ -876,9 +853,7 @@ async function deleteManager(id) {
   }
 }
 
-/* ========================================================
-   TAB PROMOTION 
-   ======================================================== */
+/* ------------------ TAB PROMOTION ---------------- */
 
 let allPromotions = [];
 let filteredPromotions = [];
@@ -912,7 +887,7 @@ async function loadPromotions() {
   }
 }
 
-// Render bảng
+// Render danh sách đăng ký
 async function renderPromotionTable() {
   const container = document.getElementById('promotionGridBody');
   const start = (currentPromotionPage - 1) * promotionsPerPage;
@@ -925,7 +900,6 @@ async function renderPromotionTable() {
     return;
   }
 
-  // Lấy fullname an toàn
   const userPromises = pageData.map(async (p) => {
     try {
       const r = await fetch(`${API_BASE}/profile/${p.userId}`, {
@@ -1007,7 +981,7 @@ async function approvePromotion(promId) {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token
       },
-      body: JSON.stringify({ status: 'Approved' }) // hoặc "APPROVED" tùy backend
+      body: JSON.stringify({ status: 'Approved' }) 
     });
 
     if (res.ok) {
@@ -1029,7 +1003,7 @@ document.getElementById('filterStatus')?.addEventListener('change', function() {
   renderPromotionTable();
 });
 
-// Hàm hỗ trợ chuyển trang cho promotion
+// Chuyển trang
 function promotionChargerPage(page) {
   const totalPages = Math.ceil(filteredPromotions.length / promotionsPerPage);
   if (page < 1 || page > totalPages) return;
@@ -1037,13 +1011,11 @@ function promotionChargerPage(page) {
   renderPromotionTable();
 }
 
-// ==================== HÀM PHÂN TRANG CHUNG ====================
-// Dùng cho: User, Charger, Bank Account, Promotion, v.v...
+// ---------- PHÂN TRANG CHUNG -----------------
 function renderCommonPagination(totalItems, pageSize, currentPage, containerId, changePageCallback) {
   const totalPages = Math.ceil(totalItems / pageSize);
   const container = document.getElementById(containerId);
 
-  // Nếu ít hơn 2 trang hoặc không có dữ liệu → ẩn phân trang
   if (totalPages <= 1 || totalItems === 0) {
     container.innerHTML = '';
     return;
@@ -1080,9 +1052,8 @@ function renderCommonPagination(totalItems, pageSize, currentPage, containerId, 
   container.innerHTML = html;
 }
 
-// ==================== RELOAD TAB HIỆN TẠI SAU MỌI HÀNH ĐỘNG ====================
+// ----------- RELOAD TAB HIỆN TẠI ------------
 function reloadCurrentTab() {
-  // Kiểm tra tab nào đang active → reload đúng tab đó
   if (document.querySelector('.user-page').style.display === 'flex') {
     loadUsers?.();
   }
@@ -1098,5 +1069,4 @@ function reloadCurrentTab() {
   else if (document.querySelector('.manager-page').style.display === 'flex') {
     loadManagers?.();
   }
-  // Thêm các tab khác nếu cần: manager, message, v.v.
 }

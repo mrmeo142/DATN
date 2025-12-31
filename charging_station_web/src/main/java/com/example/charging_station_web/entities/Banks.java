@@ -12,6 +12,5 @@ import lombok.Data;
 public class Banks {
     @Id
     private String id;
-    // private String adminId;
     private String bankName;
 }
