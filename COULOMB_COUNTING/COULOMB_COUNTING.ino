@@ -36,7 +36,7 @@ void setup() {
     while (1) {}
   }
 
-  EEPROM.get(EEPROM_ADDR, current_capacity);
+  // EEPROM.get(EEPROM_ADDR, current_capacity);
   float voltage = ina219.getBusVoltage_V();
   
   if (isnan(current_capacity) || current_capacity < 0 || current_capacity > BATTERY_CAPACITY_MAH) {
@@ -68,17 +68,17 @@ void loop() {
 
   if (current_capacity > BATTERY_CAPACITY_MAH) current_capacity = BATTERY_CAPACITY_MAH;
 
-  if (bus_voltage > 4.18 && current_mA > 0) {
-       if (current_capacity < BATTERY_CAPACITY_MAH * 0.98) {
-           current_capacity = BATTERY_CAPACITY_MAH;
-           Serial.println(">>> FULL SYNC <<<");
-       }
-  }
+  // if (bus_voltage > 4.18 && current_mA > 0) {
+  //      if (current_capacity < BATTERY_CAPACITY_MAH * 0.98) {
+  //          current_capacity = BATTERY_CAPACITY_MAH;
+  //          Serial.println(">>> FULL SYNC <<<");
+  //      }
+  // }
 
-  if (millis() - save_timer > 60000) {
-      EEPROM.put(EEPROM_ADDR, current_capacity);
-      save_timer = millis();
-  }
+  // if (millis() - save_timer > 60000) {
+  //     EEPROM.put(EEPROM_ADDR, current_capacity);
+  //     save_timer = millis();
+  // }
 
   // Tính toán hiển thị
   float percent = 0.0;

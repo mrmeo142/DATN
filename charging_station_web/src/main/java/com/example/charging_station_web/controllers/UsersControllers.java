@@ -258,7 +258,7 @@ public class UsersControllers {
             String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
-                Date expiry = JwtUtil.getExpiration(token); // cần tạo method getExpiration trong JwtUtil
+                Date expiry = JwtUtil.getExpiration(token); 
                 TokenBlackList blacklistedToken = new TokenBlackList(token, expiry);
                 tokenBlacklist.save(blacklistedToken);
             }

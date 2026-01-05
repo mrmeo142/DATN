@@ -180,13 +180,14 @@ public class BillServices {
         i = i/logs.size();
         Session s = new Session(bill.getCreatedAt(), pause);
         Double delta = s.getDuration();
-        Double cost = v * i * delta * price;
+        Double cost = v * i * delta * price / 1000.0;
         Double amount = bill.getAmount();
         bill.setAmount(amount + Math.abs(cost));
         bill.setAction("Stop");
         bill.addSession(s);
         bill.setPauseAt(pause);
         bill.setSubmitType(submit);
+        logRepositories.deleteByBillId(billId);
         return billsReponsitories.save(bill);
     }
 
@@ -210,7 +211,7 @@ public class BillServices {
         userRepositories.save(user);
         userRepositories.save(manager);
         bill.setPaid(true);
-        logRepositories.deleteByBillId(billId);
+        //logRepositories.deleteByBillId(billId);
         charger.setStatus("OFF");
         chargerRepositories.save(charger);
         return billsReponsitories.save(bill);

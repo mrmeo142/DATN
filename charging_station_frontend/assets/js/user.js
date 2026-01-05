@@ -12,7 +12,27 @@ function isTokenExpired(token) {
     }
 }
 
-function handleLogout() {
+// Lấy token từ localStorage
+const token = localStorage.getItem('jwtToken');
+
+// function handleLogout() {
+//     localStorage.removeItem('jwtToken');
+//     localStorage.removeItem('userFullName');
+//     localStorage.removeItem('userRole');
+//     localStorage.removeItem('userId');
+//     window.location.href = 'index.html';
+// }
+
+async function handleLogout() {
+  if (!token) return;
+  try {
+    await fetch(`${API_BASE}/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+  } catch (err) {
+    console.error('Logout error:', err);
+  }
     localStorage.removeItem('jwtToken');
     localStorage.removeItem('userFullName');
     localStorage.removeItem('userRole');
@@ -20,8 +40,6 @@ function handleLogout() {
     window.location.href = 'index.html';
 }
 
-// Lấy token từ localStorage
-const token = localStorage.getItem('jwtToken');
 //const API_BASE = "http://localhost:8080";
 const API_BASE = "http://178.128.209.28:8080";
 if (!token || isTokenExpired(token)) {
@@ -81,7 +99,7 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
 
     let options = [];
     if (role === 0) options = ['User'];
-    else if (role === 1) options = ['Admin'];
+    else if (role === 1) options = ['Admin', 'User'];
     else if (role === 2) options = ['Manager', 'User'];
 
     options.forEach(option => {
@@ -99,11 +117,9 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
     const logoutLi = document.createElement('li');
     logoutLi.textContent = 'Logout';
     logoutLi.classList.add('dropdown-item');
-    logoutLi.addEventListener('click', () => {
-        localStorage.removeItem('jwtToken');
-        localStorage.removeItem('userFullName');
-        localStorage.removeItem('userRole');
-        window.location.href = 'index.html';
+    logoutLi.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        handleLogout();      
     });
     dropdown.appendChild(logoutLi);
 
@@ -653,16 +669,19 @@ function connectWebSocket() {
             if (currentEl) currentEl.textContent = (logData.current || 0) + ' A';
 
             const totalEl = document.getElementById('totalCharger');
-            if (totalEl) totalEl.textContent = (logData.totalCharger || 0) + ' kWh';
+            if (totalEl) totalEl.textContent = (logData.voltage * logData.current / 1000 || 0) + ' kW';
 
             const totalE2 = document.getElementById('totalCharger1');
-            if (totalE2) totalE2.textContent = (logData.totalCharger || 0) + ' kWh';
+            if (totalE2) {
+                let kwhValue = (logData.totalCharger) || 0;
+                totalE2.textContent = kwhValue.toFixed(2) + ' kWh';
+            }
 
             const costEl = document.getElementById('totalCost');
-            if (costEl) costEl.textContent = formatVND(logData.amount);
+            if (costEl) costEl.textContent = formatVND(logData.amount) + ' VND';
 
             const priceEl = document.getElementById('price');
-            if (priceEl) priceEl.textContent = (formatVND(logData.price) || 0.09);
+            if (priceEl) priceEl.textContent = (formatVND(logData.price) || 5000);
 
             const batteryLevel = document.querySelector('.battery-level');
             
@@ -844,7 +863,7 @@ function initRealtimeChart() {
             labels: labels,
             datasets: [
                 {
-                    label: 'Voltage (kV)',
+                    label: 'Voltage (V)',
                     data: voltageData,
                     borderColor: '#00ff88',
                     backgroundColor: 'rgba(0, 255, 136, 0.1)',
@@ -896,7 +915,7 @@ function initRealtimeChart() {
                     max: 5,
                     ticks: { 
                         color: '#00ff88',
-                        callback: value => value + ' kV'
+                        callback: value => value + ' V'
                     },
                     grid: { color: 'rgba(0,255,136,0.2)' },
                     title: {
@@ -910,7 +929,7 @@ function initRealtimeChart() {
                     type: 'linear',
                     position: 'right',
                     min: 0,
-                    max: 100,
+                    max: 200,
                     ticks: { 
                         color: '#ff0080',
                         callback: value => value + ' A'

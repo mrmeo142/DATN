@@ -101,7 +101,7 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
     options = ['User'];
   } 
   else if (role === 1) {
-    options = ['Admin'];
+    options = ['Admin', 'User'];
   } 
   else if (role === 2) {
     options = ['Manager', 'User'];

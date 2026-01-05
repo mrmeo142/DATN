@@ -11,7 +11,27 @@ function isTokenExpired(token) {
     }
 }
 
-function handleLogout() {
+// function handleLogout() {
+//     localStorage.removeItem('jwtToken');
+//     localStorage.removeItem('userFullName');
+//     localStorage.removeItem('userRole');
+//     localStorage.removeItem('userId');
+//     window.location.href = 'index.html';
+// }
+
+// Lấy token từ localStorage
+const token = localStorage.getItem('jwtToken');
+
+async function handleLogout() {
+  if (!token) return;
+  try {
+    await fetch(`${API_BASE}/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+  } catch (err) {
+    console.error('Logout error:', err);
+  }
     localStorage.removeItem('jwtToken');
     localStorage.removeItem('userFullName');
     localStorage.removeItem('userRole');
@@ -19,8 +39,6 @@ function handleLogout() {
     window.location.href = 'index.html';
 }
 
-// Lấy token từ localStorage
-const token = localStorage.getItem('jwtToken');
 //const API_BASE = "http://localhost:8080";
 const API_BASE = "http://178.128.209.28:8080";
 console.log(token);
@@ -85,7 +103,7 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
 
     let options = [];
     if (role === 0) options = ['User'];
-    else if (role === 1) options = ['Admin'];
+    else if (role === 1) options = ['Admin', 'User'];
     else if (role === 2) options = ['Manager', 'User'];
 
     options.forEach(option => {
@@ -103,11 +121,9 @@ function showUserDropdown(loginHeaderBtn, fullname, role) {
     const logoutLi = document.createElement('li');
     logoutLi.textContent = 'Logout';
     logoutLi.classList.add('dropdown-item');
-    logoutLi.addEventListener('click', () => {
-        localStorage.removeItem('jwtToken');
-        localStorage.removeItem('userFullName');
-        localStorage.removeItem('userRole');
-        window.location.href = 'index.html';
+    logoutLi.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        handleLogout();      
     });
     dropdown.appendChild(logoutLi);
 

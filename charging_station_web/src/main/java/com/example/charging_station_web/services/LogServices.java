@@ -57,7 +57,7 @@ public class LogServices {
         Double time = new BigDecimal(Duration.between(create, now).toMillis()/3600000.0)
                             .setScale(3, RoundingMode.DOWN).doubleValue();
         Double cost = bill.getAmount();
-        Double totalCharger = Math.abs(current * voltage * time);
+        Double totalCharger = Math.abs(current * voltage * time / 1000.0);
         Double amount = totalCharger * p.getPrice() + cost;
         
         if((user.getBalance() - amount) < p.getPrice() * 4){
