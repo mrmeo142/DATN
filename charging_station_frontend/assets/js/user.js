@@ -669,7 +669,10 @@ function connectWebSocket() {
             if (currentEl) currentEl.textContent = (logData.current || 0) + ' A';
 
             const totalEl = document.getElementById('totalCharger');
-            if (totalEl) totalEl.textContent = (logData.voltage * logData.current / 1000 || 0) + ' kW';
+            if (totalEl){
+                let powerValue = (logData.voltage * logData.current / 1000) || 0;
+                totalEl.textContent = powerValue.toFixed(2) + ' kW';
+            }
 
             const totalE2 = document.getElementById('totalCharger1');
             if (totalE2) {
